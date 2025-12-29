@@ -1,0 +1,19 @@
+<div class="layout-wrapper" [class.sidebar-collapsed]="sidebarCollapsed">
+  <app-sidebar
+    [collapsed]="sidebarCollapsed"
+    [menuItems]="menuItems"
+    (collapsedChange)="sidebarCollapsed = $event"
+  ></app-sidebar>
+
+  <app-header
+    [sidebarCollapsed]="sidebarCollapsed"
+    (toggleSidebar)="toggleSidebar()"
+    (openNotifications)="openNotifications()"
+  ></app-header>
+
+  <main class="main-content">
+    <router-outlet></router-outlet>
+  </main>
+
+  <app-notification-panel [(visible)]="notificationPanelVisible"></app-notification-panel>
+</div>

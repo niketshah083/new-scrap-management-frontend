@@ -1,0 +1,63 @@
+<form [formGroup]="form" (ngSubmit)="onSubmit()">
+  <div class="form-grid">
+    <div class="form-field">
+      <label for="companyName">Company Name *</label>
+      <input
+        pInputText
+        id="companyName"
+        formControlName="companyName"
+        placeholder="Enter company name"
+      />
+      @if (form.get('companyName')?.invalid && form.get('companyName')?.touched) {
+      <small class="error-text">Company name is required</small>
+      }
+    </div>
+    <div class="form-field">
+      <label for="contactPerson">Contact Person *</label>
+      <input
+        pInputText
+        id="contactPerson"
+        formControlName="contactPerson"
+        placeholder="Enter contact person"
+      />
+      @if (form.get('contactPerson')?.invalid && form.get('contactPerson')?.touched) {
+      <small class="error-text">Contact person is required</small>
+      }
+    </div>
+    <div class="form-field">
+      <label for="phone">Phone *</label>
+      <input pInputText id="phone" formControlName="phone" placeholder="Enter phone" />
+      @if (form.get('phone')?.invalid && form.get('phone')?.touched) {
+      <small class="error-text">Phone is required</small>
+      }
+    </div>
+    <div class="form-field">
+      <label for="email">Email *</label>
+      <input pInputText id="email" type="email" formControlName="email" placeholder="Enter email" />
+      @if (form.get('email')?.invalid && form.get('email')?.touched) {
+      <small class="error-text">Valid email is required</small>
+      }
+    </div>
+    <div class="form-field full-width">
+      <label for="address">Address *</label>
+      <textarea
+        pInputTextarea
+        id="address"
+        formControlName="address"
+        placeholder="Enter address"
+        rows="2"
+      ></textarea>
+      @if (form.get('address')?.invalid && form.get('address')?.touched) {
+      <small class="error-text">Address is required</small>
+      }
+    </div>
+  </div>
+  <div class="form-actions">
+    <p-button label="Cancel" severity="secondary" [text]="true" (click)="onCancel()"></p-button>
+    <p-button
+      type="submit"
+      [label]="vendor ? 'Update' : 'Create'"
+      [disabled]="form.invalid"
+    ></p-button>
+  </div>
+</form>

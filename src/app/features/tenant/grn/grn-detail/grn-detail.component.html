@@ -1,0 +1,114 @@
+<div class="grn-detail">
+  <div class="page-header">
+    <div class="header-left">
+      <p-button icon="pi pi-arrow-left" [text]="true" (click)="goBack()"></p-button>
+      <h1>GRN Details</h1>
+    </div>
+    @if (grn && grn.status !== 'completed' && grn.status !== 'rejected') {
+    <p-button label="Continue" icon="pi pi-arrow-right" (click)="continueGRN()"></p-button>
+    }
+  </div>
+
+  @if (loading) {
+  <div class="loading">Loading...</div>
+  } @else if (grn) {
+  <div class="grn-info">
+    <p-card>
+      <div class="info-grid">
+        <div class="info-item">
+          <label>GRN Number</label>
+          <span>{{ grn.grnNumber }}</span>
+        </div>
+        <div class="info-item">
+          <label>PO Number</label>
+          <span>{{ grn.purchaseOrder?.poNumber || '-' }}</span>
+        </div>
+        <div class="info-item">
+          <label>Vendor</label>
+          <span>{{ grn.vendor?.companyName || '-' }}</span>
+        </div>
+        <div class="info-item">
+          <label>Status</label>
+          <p-tag
+            [value]="grn.status | titlecase"
+            [severity]="getStatusSeverity(grn.status)"
+          ></p-tag>
+        </div>
+        <div class="info-item">
+          <label>Current Step</label>
+          <span>Step {{ grn.currentStep }} of 7</span>
+        </div>
+        <div class="info-item">
+          <label>Created</label>
+          <span>{{ grn.createdAt | date : 'medium' }}</span>
+        </div>
+      </div>
+    </p-card>
+
+    <p-card header="Step 1: Gate Entry" styleClass="mt-4">
+      <div class="info-grid">
+        <div class="info-item">
+          <label>Truck Number</label><span>{{ grn.truckNumber }}</span>
+        </div>
+        <div class="info-item">
+          <label>Driver Name</label><span>{{ grn.driverName }}</span>
+        </div>
+        <div class="info-item">
+          <label>Driver Mobile</label><span>{{ grn.driverMobile }}</span>
+        </div>
+        @if (grn.driverLicence) {
+        <div class="info-item">
+          <label>Driver Licence</label><span>{{ grn.driverLicence }}</span>
+        </div>
+        }
+      </div>
+    </p-card>
+
+    @if (grn.grossWeight) {
+    <p-card header="Step 2: Initial Weighing" styleClass="mt-4">
+      <div class="info-grid">
+        <div class="info-item">
+          <label>Gross Weight</label><span>{{ grn.grossWeight }} kg</span>
+        </div>
+      </div>
+    </p-card>
+    } @if (grn.tareWeight) {
+    <p-card header="Step 4: Final Weighing" styleClass="mt-4">
+      <div class="info-grid">
+        <div class="info-item">
+          <label>Tare Weight</label><span>{{ grn.tareWeight }} kg</span>
+        </div>
+        <div class="info-item">
+          <label>Net Weight</label><span>{{ grn.netWeight }} kg</span>
+        </div>
+      </div>
+    </p-card>
+    } @if (grn.approvalStatus !== 'pending') {
+    <p-card header="Step 5: Supervisor Review" styleClass="mt-4">
+      <div class="info-grid">
+        <div class="info-item">
+          <label>Decision</label>
+          <p-tag
+            [value]="grn.approvalStatus | titlecase"
+            [severity]="grn.approvalStatus === 'approved' ? 'success' : 'danger'"
+          ></p-tag>
+        </div>
+        @if (grn.reviewedAt) {
+        <div class="info-item">
+          <label>Reviewed At</label><span>{{ grn.reviewedAt | date : 'medium' }}</span>
+        </div>
+        } @if (grn.rejectionReason) {
+        <div class="info-item full-width">
+          <label>Rejection Reason</label><span>{{ grn.rejectionReason }}</span>
+        </div>
+        } @if (grn.reviewRemarks) {
+        <div class="info-item full-width">
+          <label>Review Remarks</label><span>{{ grn.reviewRemarks }}</span>
+        </div>
+        }
+      </div>
+    </p-card>
+    }
+  </div>
+  }
+</div>

@@ -1,0 +1,55 @@
+<aside class="sidebar" [class.collapsed]="collapsed">
+  <div class="sidebar-header">
+    @if (!collapsed) {
+    <span class="logo-text">Scrap MS</span>
+    }
+    <button class="toggle-btn" (click)="toggleCollapse()">
+      <i class="pi" [class.pi-angle-left]="!collapsed" [class.pi-angle-right]="collapsed"></i>
+    </button>
+  </div>
+
+  <nav class="sidebar-nav">
+    <ul class="menu-list">
+      @for (item of menuItems; track item.label) {
+      <li class="menu-item">
+        @if (item.route) {
+        <a
+          [routerLink]="item.route"
+          routerLinkActive="active"
+          class="menu-link"
+          [title]="collapsed ? item.label : ''"
+        >
+          <i [class]="item.icon"></i>
+          @if (!collapsed) {
+          <span class="menu-label">{{ item.label }}</span>
+          }
+        </a>
+        } @else if (item.children) {
+        <div class="menu-link has-submenu" (click)="toggleSubmenu(item)">
+          <i [class]="item.icon"></i>
+          @if (!collapsed) {
+          <span class="menu-label">{{ item.label }}</span>
+          <i
+            class="pi submenu-arrow"
+            [class.pi-angle-down]="item.expanded"
+            [class.pi-angle-right]="!item.expanded"
+          ></i>
+          }
+        </div>
+        @if (item.expanded && !collapsed) {
+        <ul class="submenu">
+          @for (child of item.children; track child.label) {
+          <li>
+            <a [routerLink]="child.route" routerLinkActive="active" class="submenu-link">
+              <i [class]="child.icon"></i>
+              <span>{{ child.label }}</span>
+            </a>
+          </li>
+          }
+        </ul>
+        } }
+      </li>
+      }
+    </ul>
+  </nav>
+</aside>

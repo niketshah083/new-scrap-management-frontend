@@ -1,0 +1,141 @@
+<div class="list-page">
+  <div class="page-header">
+    <h1><i class="pi pi-user-plus"></i> Super Admins</h1>
+    <div class="header-actions">
+      <p-button label="Add Super Admin" icon="pi pi-plus" (click)="openForm()"></p-button>
+    </div>
+  </div>
+
+  <div class="table-card">
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+      <div class="search-input">
+        <i class="pi pi-search"></i>
+        <input
+          type="text"
+          placeholder="Search by name, email..."
+          [(ngModel)]="searchTerm"
+          (input)="onSearch()"
+        />
+      </div>
+      <div class="filter-select">
+        <p-select
+          [options]="statusOptions"
+          [(ngModel)]="selectedStatus"
+          (onChange)="onFilter()"
+          placeholder="All Status"
+          [showClear]="true"
+          appendTo="body"
+        ></p-select>
+      </div>
+    </div>
+
+    <!-- Stats Row -->
+    <div class="stats-row">
+      <div class="stat-item">
+        <div class="stat-icon blue"><i class="pi pi-users"></i></div>
+        <div class="stat-info">
+          <div class="stat-value">{{ totalCount }}</div>
+          <div class="stat-label">Total Admins</div>
+        </div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-icon green"><i class="pi pi-check-circle"></i></div>
+        <div class="stat-info">
+          <div class="stat-value">{{ activeCount }}</div>
+          <div class="stat-label">Active</div>
+        </div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-icon red"><i class="pi pi-times-circle"></i></div>
+        <div class="stat-info">
+          <div class="stat-value">{{ inactiveCount }}</div>
+          <div class="stat-label">Inactive</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <p-table
+      [value]="filteredAdmins"
+      [loading]="loading"
+      [paginator]="true"
+      [rows]="10"
+      [rowsPerPageOptions]="[10, 25, 50]"
+      [showCurrentPageReport]="true"
+      currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Status</th>
+          <th style="width: 120px">Actions</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-admin>
+        <tr>
+          <td>
+            <span class="cell-primary">{{ admin.name }}</span>
+          </td>
+          <td>
+            <span class="cell-link">{{ admin.email }}</span>
+          </td>
+          <td>
+            <p-tag
+              [value]="admin.isActive ? 'Active' : 'Inactive'"
+              [severity]="admin.isActive ? 'success' : 'danger'"
+            ></p-tag>
+          </td>
+          <td>
+            <div class="action-buttons">
+              <p-button
+                icon="pi pi-pencil"
+                [rounded]="true"
+                [text]="true"
+                severity="info"
+                pTooltip="Edit"
+                (click)="openForm(admin)"
+              ></p-button>
+              <p-button
+                icon="pi pi-trash"
+                [rounded]="true"
+                [text]="true"
+                severity="danger"
+                pTooltip="Delete"
+                (click)="confirmDelete(admin)"
+              ></p-button>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="4">
+            <div class="empty-state">
+              <i class="pi pi-user-plus"></i>
+              <h4>No Super Admins Found</h4>
+              <p>Add your first super admin to get started</p>
+              <p-button label="Add Super Admin" icon="pi pi-plus" (click)="openForm()"></p-button>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+</div>
+
+<p-dialog
+  [(visible)]="formVisible"
+  [header]="editingAdmin ? 'Edit Super Admin' : 'Add Super Admin'"
+  [modal]="true"
+  [style]="{ width: '450px' }"
+  [breakpoints]="{ '768px': '95vw' }"
+  [closable]="true"
+>
+  <app-super-admin-form
+    [admin]="editingAdmin"
+    (save)="onSave($event)"
+    (cancel)="closeForm()"
+  ></app-super-admin-form>
+</p-dialog>

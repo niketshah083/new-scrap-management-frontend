@@ -1,0 +1,64 @@
+<form [formGroup]="form" (ngSubmit)="onSubmit()">
+  <div class="form-fields">
+    <div class="form-field">
+      <label for="email">Email *</label>
+      <input
+        pInputText
+        id="email"
+        type="email"
+        formControlName="email"
+        placeholder="Enter email"
+        [readonly]="!!user"
+      />
+      @if (form.get('email')?.invalid && form.get('email')?.touched) {
+      <small class="error-text">Valid email is required</small>
+      }
+    </div>
+    <div class="form-field">
+      <label for="name">Name *</label>
+      <input pInputText id="name" formControlName="name" placeholder="Enter name" />
+      @if (form.get('name')?.invalid && form.get('name')?.touched) {
+      <small class="error-text">Name is required</small>
+      }
+    </div>
+    @if (!user) {
+    <div class="form-field">
+      <label for="password">Password *</label>
+      <p-password
+        id="password"
+        formControlName="password"
+        placeholder="Enter password"
+        [toggleMask]="true"
+        styleClass="w-full"
+        inputStyleClass="w-full"
+      ></p-password>
+      @if (form.get('password')?.invalid && form.get('password')?.touched) {
+      <small class="error-text">Password (min 8 chars) is required</small>
+      }
+    </div>
+    }
+    <div class="form-field">
+      <app-select
+        id="roleId"
+        formControlName="roleId"
+        [options]="roles"
+        label="Role"
+        optionLabel="name"
+        optionValue="id"
+        placeholder="Select role"
+        [required]="true"
+      ></app-select>
+      @if (form.get('roleId')?.invalid && form.get('roleId')?.touched) {
+      <small class="error-text">Role is required</small>
+      }
+    </div>
+  </div>
+  <div class="form-actions">
+    <p-button label="Cancel" severity="secondary" [text]="true" (click)="onCancel()"></p-button>
+    <p-button
+      type="submit"
+      [label]="user ? 'Update' : 'Create'"
+      [disabled]="form.invalid"
+    ></p-button>
+  </div>
+</form>

@@ -1,0 +1,59 @@
+<div class="login-container">
+  <div class="login-card">
+    <div class="login-header">
+      <h1>Scrap MS</h1>
+      <p>Sign in to your account</p>
+    </div>
+
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+      <div class="form-field">
+        <label for="email">Email</label>
+        <input
+          pInputText
+          id="email"
+          type="email"
+          formControlName="email"
+          placeholder="Enter your email"
+          [class.ng-invalid]="loginForm.get('email')?.invalid && loginForm.get('email')?.touched"
+        />
+        @if (loginForm.get('email')?.invalid && loginForm.get('email')?.touched) {
+        <small class="error-text">
+          @if (loginForm.get('email')?.errors?.['required']) { Email is required } @else if
+          (loginForm.get('email')?.errors?.['email']) { Please enter a valid email }
+        </small>
+        }
+      </div>
+
+      <div class="form-field">
+        <label for="password">Password</label>
+        <p-password
+          id="password"
+          formControlName="password"
+          placeholder="Enter your password"
+          [feedback]="false"
+          [toggleMask]="true"
+          styleClass="w-full"
+          inputStyleClass="w-full"
+        ></p-password>
+        @if (loginForm.get('password')?.invalid && loginForm.get('password')?.touched) {
+        <small class="error-text">Password is required</small>
+        }
+      </div>
+
+      <p-button
+        type="submit"
+        label="Sign In"
+        [loading]="loading"
+        [disabled]="loginForm.invalid || loading"
+        styleClass="w-full"
+      ></p-button>
+    </form>
+
+    @if (errorMessage) {
+    <div class="error-message">
+      <i class="pi pi-exclamation-circle"></i>
+      <span>{{ errorMessage }}</span>
+    </div>
+    }
+  </div>
+</div>

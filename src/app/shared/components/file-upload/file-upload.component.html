@@ -1,0 +1,191 @@
+<div class="file-upload-field">
+  @if (label) {
+  <label class="field-label">
+    {{ label }}
+    @if (required) { <span class="required">*</span> }
+  </label>
+  }
+
+  <!-- Single file mode -->
+  @if (!multiple) {
+  <div
+    class="upload-container"
+    [class.has-file]="fileName"
+    [class.disabled]="disabled"
+    [class.uploading]="isUploading"
+  >
+    <!-- File name display -->
+    <div class="file-display" (click)="!disabled && !isUploading && triggerFileInput()">
+      @if (isUploading) {
+      <p-progressSpinner
+        [style]="{ width: '20px', height: '20px' }"
+        strokeWidth="4"
+      ></p-progressSpinner>
+      <span class="uploading-text">Uploading...</span>
+      } @else if (fileName) {
+      <i class="pi pi-file"></i>
+      <span class="file-name">{{ fileName }}</span>
+      } @else {
+      <i class="pi pi-upload"></i>
+      <span class="placeholder">{{ placeholder }}</span>
+      }
+    </div>
+
+    <!-- Action buttons -->
+    <div class="action-buttons">
+      @if (showCamera && !disabled && !isUploading) {
+      <p-button
+        icon="pi pi-camera"
+        [rounded]="true"
+        [text]="true"
+        severity="secondary"
+        (click)="openCamera()"
+        pTooltip="Take Photo"
+      ></p-button>
+      } @if (showFileUpload && !disabled && !isUploading) {
+      <p-button
+        icon="pi pi-folder-open"
+        [rounded]="true"
+        [text]="true"
+        severity="secondary"
+        (click)="triggerFileInput()"
+        pTooltip="Browse Files"
+      ></p-button>
+      } @if (fileName && !disabled && !isUploading) {
+      <p-button
+        icon="pi pi-times"
+        [rounded]="true"
+        [text]="true"
+        severity="danger"
+        (click)="removeFile()"
+        pTooltip="Remove"
+      ></p-button>
+      }
+    </div>
+  </div>
+
+  <!-- Image preview for single file -->
+  @if (filePreview) {
+  <div class="file-preview">
+    <img [src]="filePreview" alt="Preview" />
+  </div>
+  } }
+
+  <!-- Multiple files mode -->
+  @if (multiple) {
+  <div class="multiple-upload-container" [class.disabled]="disabled">
+    <!-- Upload buttons -->
+    @if (canAddMore && !disabled) {
+    <div class="upload-actions">
+      @if (showCamera) {
+      <p-button
+        icon="pi pi-camera"
+        label="Take Photo"
+        [outlined]="true"
+        severity="secondary"
+        (click)="openCamera()"
+        [disabled]="isAnyUploading"
+      ></p-button>
+      } @if (showFileUpload) {
+      <p-button
+        icon="pi pi-folder-open"
+        label="Browse Files"
+        [outlined]="true"
+        severity="secondary"
+        (click)="triggerFileInput()"
+        [disabled]="isAnyUploading"
+      ></p-button>
+      }
+      <span class="file-count">{{ files.length }}/{{ maxFiles }} files</span>
+    </div>
+    }
+
+    <!-- Files list -->
+    @if (files.length > 0) {
+    <div class="files-list">
+      @for (file of files; track $index; let i = $index) {
+      <div class="file-item" [class.uploading]="file.uploading" [class.error]="file.error">
+        @if (file.uploading) {
+        <div class="file-uploading">
+          <p-progressSpinner
+            [style]="{ width: '24px', height: '24px' }"
+            strokeWidth="4"
+          ></p-progressSpinner>
+        </div>
+        } @else if (file.preview) {
+        <img [src]="file.preview" alt="Preview" class="file-thumb" />
+        } @else {
+        <div class="file-icon">
+          <i class="pi pi-file"></i>
+        </div>
+        }
+        <span class="file-name">{{ file.name }}</span>
+        @if (file.error) {
+        <span class="error-text">{{ file.error }}</span>
+        } @if (!disabled && !file.uploading) {
+        <p-button
+          icon="pi pi-times"
+          [rounded]="true"
+          [text]="true"
+          severity="danger"
+          size="small"
+          (click)="removeFileAt(i)"
+        ></p-button>
+        }
+      </div>
+      }
+    </div>
+    } @else {
+    <div class="empty-state">
+      <i class="pi pi-images"></i>
+      <span>{{ placeholder }}</span>
+    </div>
+    }
+  </div>
+  }
+
+  <!-- Hidden file input -->
+  <input
+    #fileInput
+    type="file"
+    [accept]="accept"
+    [multiple]="multiple"
+    (change)="onFileSelect($event)"
+    style="display: none"
+  />
+</div>
+
+<!-- Camera Dialog -->
+<p-dialog
+  header="Take Photo"
+  [(visible)]="showCameraDialog"
+  [modal]="true"
+  [closable]="true"
+  [draggable]="false"
+  [resizable]="false"
+  styleClass="camera-dialog"
+  (onHide)="closeCamera()"
+>
+  <div class="camera-container">
+    @if (cameraError) {
+    <div class="camera-error">
+      <i class="pi pi-exclamation-triangle"></i>
+      <p>{{ cameraError }}</p>
+    </div>
+    } @else {
+    <video #videoElement autoplay playsinline class="camera-video"></video>
+    <canvas #canvasElement style="display: none"></canvas>
+    }
+  </div>
+
+  <ng-template pTemplate="footer">
+    <p-button label="Cancel" severity="secondary" [text]="true" (click)="closeCamera()"></p-button>
+    <p-button
+      label="Capture"
+      icon="pi pi-camera"
+      (click)="capturePhoto()"
+      [loading]="isCapturing"
+      [disabled]="!!cameraError"
+    ></p-button>
+  </ng-template>
+</p-dialog>

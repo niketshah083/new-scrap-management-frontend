@@ -1,0 +1,7 @@
+.grn-detail {
+  .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; .header-left { display: flex; align-items: center; gap: 0.5rem; } h1 { font-size: 1.5rem; font-weight: 600; color: #1e293b; margin: 0; } }
+  .loading { text-align: center; padding: 2rem; color: #64748b; }
+  .info-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+  .info-item { display: flex; flex-direction: column; gap: 0.25rem; &.full-width { grid-column: span 3; } label { font-size: 0.75rem; color: #64748b; text-transform: uppercase; } span { font-weight: 500; color: #1e293b; } }
+}
+@media (max-width: 768px) { .grn-detail .info-grid { grid-template-columns: 1fr; } .info-item.full-width { grid-column: span 1; } }

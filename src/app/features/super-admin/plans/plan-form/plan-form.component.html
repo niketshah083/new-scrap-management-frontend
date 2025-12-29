@@ -1,0 +1,75 @@
+<form [formGroup]="form" (ngSubmit)="onSubmit()">
+  <div class="form-grid">
+    <div class="form-field">
+      <label for="name">Name *</label>
+      <input pInputText id="name" formControlName="name" placeholder="Enter plan name" />
+      @if (form.get('name')?.invalid && form.get('name')?.touched) {
+      <small class="error-text">Name is required</small>
+      }
+    </div>
+
+    <div class="form-field">
+      <label for="price">Price *</label>
+      <p-inputnumber
+        id="price"
+        formControlName="price"
+        mode="currency"
+        currency="USD"
+        locale="en-US"
+        styleClass="w-full"
+      ></p-inputnumber>
+      @if (form.get('price')?.invalid && form.get('price')?.touched) {
+      <small class="error-text">Price is required</small>
+      }
+    </div>
+
+    <div class="form-field">
+      <app-select
+        id="billingCycle"
+        formControlName="billingCycle"
+        [options]="billingCycleOptions"
+        label="Billing Cycle"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Select billing cycle"
+        [required]="true"
+      ></app-select>
+      @if (form.get('billingCycle')?.invalid && form.get('billingCycle')?.touched) {
+      <small class="error-text">Billing cycle is required</small>
+      }
+    </div>
+
+    <div class="form-field full-width">
+      <label for="description">Description</label>
+      <textarea
+        pInputTextarea
+        id="description"
+        formControlName="description"
+        placeholder="Enter description"
+        rows="2"
+      ></textarea>
+    </div>
+
+    <div class="form-field full-width">
+      <app-multiselect
+        id="moduleIds"
+        formControlName="moduleIds"
+        [options]="modules"
+        label="Modules"
+        optionLabel="name"
+        optionValue="id"
+        placeholder="Select modules"
+        display="chip"
+      ></app-multiselect>
+    </div>
+  </div>
+
+  <div class="form-actions">
+    <p-button label="Cancel" severity="secondary" [text]="true" (click)="onCancel()"></p-button>
+    <p-button
+      type="submit"
+      [label]="plan ? 'Update' : 'Create'"
+      [disabled]="form.invalid"
+    ></p-button>
+  </div>
+</form>

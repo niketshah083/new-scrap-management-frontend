@@ -1,0 +1,149 @@
+<div class="list-page">
+  <div class="page-header">
+    <h1><i class="pi pi-ticket"></i> Gate Passes</h1>
+    <div class="header-actions">
+      <p-button
+        label="Verify Pass"
+        icon="pi pi-qrcode"
+        severity="secondary"
+        [outlined]="true"
+        (click)="goToVerify()"
+      ></p-button>
+    </div>
+  </div>
+
+  <div class="table-card">
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+      <div class="search-input">
+        <i class="pi pi-search"></i>
+        <input
+          type="text"
+          placeholder="Search by pass number or GRN..."
+          [(ngModel)]="searchValue"
+        />
+      </div>
+      <div class="filter-select">
+        <p-select
+          [options]="statusOptions"
+          [(ngModel)]="selectedStatus"
+          (onChange)="onFilter()"
+          placeholder="All Status"
+          [showClear]="true"
+          appendTo="body"
+        ></p-select>
+      </div>
+    </div>
+
+    <!-- Stats Row -->
+    <div class="stats-row">
+      <div class="stat-item">
+        <div class="stat-icon blue"><i class="pi pi-ticket"></i></div>
+        <div class="stat-info">
+          <div class="stat-value">{{ totalCount }}</div>
+          <div class="stat-label">Total Passes</div>
+        </div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-icon green"><i class="pi pi-check-circle"></i></div>
+        <div class="stat-info">
+          <div class="stat-value">{{ activeCount }}</div>
+          <div class="stat-label">Active</div>
+        </div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-icon purple"><i class="pi pi-verified"></i></div>
+        <div class="stat-info">
+          <div class="stat-value">{{ usedCount }}</div>
+          <div class="stat-label">Used</div>
+        </div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-icon orange"><i class="pi pi-clock"></i></div>
+        <div class="stat-info">
+          <div class="stat-value">{{ expiredCount }}</div>
+          <div class="stat-label">Expired</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <p-table
+      [value]="filteredGatePasses"
+      [loading]="loading"
+      [paginator]="true"
+      [rows]="10"
+      [rowsPerPageOptions]="[10, 25, 50]"
+      [showCurrentPageReport]="true"
+      currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Pass Number</th>
+          <th>GRN Number</th>
+          <th>Status</th>
+          <th class="hide-mobile">Expires At</th>
+          <th class="hide-mobile">Used At</th>
+          <th style="width: 120px">Actions</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-gatePass>
+        <tr>
+          <td>
+            <span class="cell-link">{{ gatePass.passNumber }}</span>
+          </td>
+          <td>
+            <span class="cell-primary">{{ gatePass.grn?.grnNumber || '-' }}</span>
+          </td>
+          <td>
+            <p-tag
+              [value]="gatePass.status | titlecase"
+              [severity]="getStatusSeverity(gatePass.status)"
+            ></p-tag>
+          </td>
+          <td class="hide-mobile" [class.text-danger]="isExpired(gatePass)">
+            <span class="cell-muted">{{ formatDate(gatePass.expiresAt) }}</span>
+          </td>
+          <td class="hide-mobile">
+            <span class="cell-muted">{{ formatDate(gatePass.usedAt) }}</span>
+          </td>
+          <td>
+            <div class="action-buttons">
+              @if (gatePass.status === 'active') {
+              <p-button
+                icon="pi pi-check"
+                [rounded]="true"
+                [text]="true"
+                severity="success"
+                pTooltip="Mark as Used"
+                (click)="markAsUsed(gatePass)"
+              ></p-button>
+              }
+              <p-button
+                icon="pi pi-trash"
+                [rounded]="true"
+                [text]="true"
+                severity="danger"
+                pTooltip="Delete"
+                (click)="deleteGatePass(gatePass)"
+              ></p-button>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="6">
+            <div class="empty-state">
+              <i class="pi pi-ticket"></i>
+              <h4>No Gate Passes Found</h4>
+              <p>Gate passes will appear here when GRNs are approved</p>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+</div>
+
+<p-confirmDialog></p-confirmDialog>

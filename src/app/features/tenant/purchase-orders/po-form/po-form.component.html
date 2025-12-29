@@ -1,0 +1,96 @@
+<div class="po-form">
+  <div class="page-header">
+    <h1>{{ isEdit ? 'Edit Purchase Order' : 'Create Purchase Order' }}</h1>
+  </div>
+
+  <form [formGroup]="form" (ngSubmit)="onSubmit()">
+    <p-card>
+      <div class="form-grid">
+        <div class="form-field">
+          <label for="poNumber">PO Number *</label>
+          <input
+            pInputText
+            id="poNumber"
+            formControlName="poNumber"
+            placeholder="Enter PO number"
+          />
+        </div>
+        <div class="form-field">
+          <app-select
+            id="vendorId"
+            formControlName="vendorId"
+            [options]="vendors"
+            label="Vendor"
+            optionLabel="companyName"
+            optionValue="id"
+            placeholder="Select vendor"
+            [required]="true"
+          ></app-select>
+        </div>
+        <div class="form-field">
+          <label for="expectedDeliveryDate">Expected Delivery *</label>
+          <p-datepicker
+            id="expectedDeliveryDate"
+            formControlName="expectedDeliveryDate"
+            [showIcon]="true"
+            dateFormat="yy-mm-dd"
+            appendTo="body"
+          ></p-datepicker>
+        </div>
+        <div class="form-field full-width">
+          <label for="notes">Notes</label>
+          <textarea pInputTextarea id="notes" formControlName="notes" rows="2"></textarea>
+        </div>
+      </div>
+    </p-card>
+
+    <p-card header="Line Items" styleClass="mt-4">
+      <div class="items-table" formArrayName="items">
+        <div class="items-header">
+          <span>Material</span>
+          <span>Quantity</span>
+          <span>Unit Price</span>
+          <span></span>
+        </div>
+        @for (item of items.controls; track $index; let i = $index) {
+        <div class="item-row" [formGroupName]="i">
+          <app-select
+            formControlName="materialId"
+            [options]="materials"
+            optionLabel="name"
+            optionValue="id"
+            placeholder="Select material"
+          ></app-select>
+          <p-inputnumber formControlName="quantity" [min]="1" styleClass="w-full"></p-inputnumber>
+          <p-inputnumber
+            formControlName="unitPrice"
+            mode="currency"
+            currency="USD"
+            [min]="0"
+            styleClass="w-full"
+          ></p-inputnumber>
+          <p-button
+            icon="pi pi-trash"
+            [rounded]="true"
+            [text]="true"
+            severity="danger"
+            (click)="removeItem(i)"
+            [disabled]="items.length === 1"
+          ></p-button>
+        </div>
+        }
+        <p-button label="Add Item" icon="pi pi-plus" [text]="true" (click)="addItem()"></p-button>
+      </div>
+    </p-card>
+
+    <div class="form-actions">
+      <p-button label="Cancel" severity="secondary" [text]="true" (click)="cancel()"></p-button>
+      <p-button
+        type="submit"
+        [label]="isEdit ? 'Update' : 'Create'"
+        [loading]="loading"
+        [disabled]="form.invalid"
+      ></p-button>
+    </div>
+  </form>
+</div>

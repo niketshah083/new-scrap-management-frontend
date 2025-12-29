@@ -1,0 +1,128 @@
+<div class="list-page">
+  <div class="page-header">
+    <h1><i class="pi pi-shield"></i> Roles</h1>
+    <div class="header-actions">
+      <p-button label="Add Role" icon="pi pi-plus" (click)="openForm()"></p-button>
+    </div>
+  </div>
+
+  <div class="table-card">
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+      <div class="search-input">
+        <i class="pi pi-search"></i>
+        <input
+          type="text"
+          placeholder="Search by name, description..."
+          [(ngModel)]="searchTerm"
+          (input)="onSearch()"
+        />
+      </div>
+    </div>
+
+    <!-- Stats Row -->
+    <div class="stats-row">
+      <div class="stat-item">
+        <div class="stat-icon blue"><i class="pi pi-shield"></i></div>
+        <div class="stat-info">
+          <div class="stat-value">{{ totalCount }}</div>
+          <div class="stat-label">Total Roles</div>
+        </div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-icon purple"><i class="pi pi-key"></i></div>
+        <div class="stat-info">
+          <div class="stat-value">{{ activeCount }}</div>
+          <div class="stat-label">With Permissions</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <p-table
+      [value]="filteredRoles"
+      [loading]="loading"
+      [paginator]="true"
+      [rows]="10"
+      [rowsPerPageOptions]="[10, 25, 50]"
+      [showCurrentPageReport]="true"
+      currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Name</th>
+          <th class="hide-mobile">Description</th>
+          <th>Permissions</th>
+          <th style="width: 120px">Actions</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-role>
+        <tr>
+          <td>
+            <span class="cell-primary">{{ role.name }}</span>
+          </td>
+          <td class="hide-mobile">
+            <span class="cell-muted">{{ role.description || '-' }}</span>
+          </td>
+          <td>
+            <div class="permissions-list">
+              @for (perm of role.permissions?.slice(0, 3); track perm.id) {
+              <p-chip [label]="perm.code"></p-chip>
+              } @if (role.permissions?.length > 3) {
+              <span class="more-count">+{{ role.permissions.length - 3 }} more</span>
+              } @if (!role.permissions?.length) {
+              <span class="cell-muted">No permissions</span>
+              }
+            </div>
+          </td>
+          <td>
+            <div class="action-buttons">
+              <p-button
+                icon="pi pi-pencil"
+                [rounded]="true"
+                [text]="true"
+                severity="info"
+                pTooltip="Edit"
+                (click)="openForm(role)"
+              ></p-button>
+              <p-button
+                icon="pi pi-trash"
+                [rounded]="true"
+                [text]="true"
+                severity="danger"
+                pTooltip="Delete"
+                (click)="confirmDelete(role)"
+              ></p-button>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="4">
+            <div class="empty-state">
+              <i class="pi pi-shield"></i>
+              <h4>No Roles Found</h4>
+              <p>Add your first role to get started</p>
+              <p-button label="Add Role" icon="pi pi-plus" (click)="openForm()"></p-button>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+</div>
+
+<p-dialog
+  [(visible)]="formVisible"
+  [header]="editingRole ? 'Edit Role' : 'Add Role'"
+  [modal]="true"
+  [style]="{ width: '500px' }"
+  [breakpoints]="{ '768px': '95vw' }"
+>
+  <app-role-form
+    [role]="editingRole"
+    (save)="onSave($event)"
+    (cancel)="closeForm()"
+  ></app-role-form>
+</p-dialog>

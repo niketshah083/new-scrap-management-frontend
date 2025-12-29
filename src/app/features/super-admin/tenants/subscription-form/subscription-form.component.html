@@ -1,0 +1,53 @@
+<form [formGroup]="form" (ngSubmit)="onSubmit()">
+  <div class="form-fields">
+    <div class="form-field">
+      <app-select
+        id="planId"
+        formControlName="planId"
+        [options]="plans"
+        label="Plan"
+        optionLabel="name"
+        optionValue="id"
+        placeholder="Select a plan"
+        [required]="true"
+      ></app-select>
+      @if (form.get('planId')?.invalid && form.get('planId')?.touched) {
+      <small class="error-text">Plan is required</small>
+      }
+    </div>
+
+    <div class="form-field">
+      <label for="startDate">Start Date *</label>
+      <p-datepicker
+        id="startDate"
+        formControlName="startDate"
+        [showIcon]="true"
+        dateFormat="yy-mm-dd"
+        appendTo="body"
+      ></p-datepicker>
+      @if (form.get('startDate')?.invalid && form.get('startDate')?.touched) {
+      <small class="error-text">Start date is required</small>
+      }
+    </div>
+
+    <div class="form-field">
+      <label for="endDate">End Date *</label>
+      <p-datepicker
+        id="endDate"
+        formControlName="endDate"
+        [showIcon]="true"
+        dateFormat="yy-mm-dd"
+        [minDate]="minEndDate"
+        appendTo="body"
+      ></p-datepicker>
+      @if (form.get('endDate')?.invalid && form.get('endDate')?.touched) {
+      <small class="error-text">End date is required</small>
+      }
+    </div>
+  </div>
+
+  <div class="form-actions">
+    <p-button label="Cancel" severity="secondary" [text]="true" (click)="onCancel()"></p-button>
+    <p-button type="submit" label="Assign" [disabled]="form.invalid"></p-button>
+  </div>
+</form>

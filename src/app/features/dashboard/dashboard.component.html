@@ -1,0 +1,257 @@
+<div class="dashboard-container">
+  <div class="dashboard-header">
+    <div>
+      <h1 class="dashboard-title">Dashboard</h1>
+      <p class="dashboard-subtitle">Welcome to Scrap Management System</p>
+    </div>
+    <p-button label="New GRN" icon="pi pi-plus" (click)="navigateTo('/grn/new')"></p-button>
+  </div>
+
+  @if (loading) {
+  <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px">
+    @for (i of [1,2,3,4]; track i) {
+    <p-skeleton height="120px" borderRadius="12px"></p-skeleton>
+    }
+  </div>
+  } @else {
+  <!-- KPI Cards Row -->
+  <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 24px">
+    <div class="kpi-card kpi-blue" (click)="navigateTo('/grn')">
+      <div class="kpi-icon"><i class="pi pi-file-edit"></i></div>
+      <div class="kpi-data">
+        <span class="kpi-value">{{ getTotalGRNsToday() }}</span>
+        <span class="kpi-label">Today's GRNs</span>
+        <span class="kpi-sub">{{ summary?.totalGRNsThisMonth || 0 }} this month</span>
+      </div>
+    </div>
+    <div class="kpi-card kpi-orange" (click)="navigateTo('/qc')">
+      <div class="kpi-icon"><i class="pi pi-clipboard"></i></div>
+      <div class="kpi-data">
+        <span class="kpi-value">{{ summary?.pendingQCCount || 0 }}</span>
+        <span class="kpi-label">Pending QC</span>
+        <span class="kpi-sub">Awaiting inspection</span>
+      </div>
+    </div>
+    <div class="kpi-card kpi-purple" (click)="navigateTo('/gate-pass')">
+      <div class="kpi-icon"><i class="pi pi-ticket"></i></div>
+      <div class="kpi-data">
+        <span class="kpi-value">{{ summary?.activeGatePassCount || 0 }}</span>
+        <span class="kpi-label">Active Gate Passes</span>
+        <span class="kpi-sub">{{ summary?.expiredGatePassCount || 0 }} expired</span>
+      </div>
+    </div>
+    <div class="kpi-card kpi-green">
+      <div class="kpi-icon"><i class="pi pi-check-circle"></i></div>
+      <div class="kpi-data">
+        <span class="kpi-value">{{ getGRNStatusCount('completed') }}</span>
+        <span class="kpi-label">Completed Today</span>
+        <span class="kpi-sub">Processed</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats Row -->
+  <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 16px; margin-bottom: 24px">
+    <div class="stat-mini" (click)="navigateTo('/vendors')">
+      <i class="pi pi-users stat-icon-sm"></i>
+      <div>
+        <strong>{{ summary?.vendorCount || 0 }}</strong
+        ><span>Vendors</span>
+      </div>
+    </div>
+    <div class="stat-mini" (click)="navigateTo('/materials')">
+      <i class="pi pi-th-large stat-icon-sm"></i>
+      <div>
+        <strong>{{ summary?.materialCount || 0 }}</strong
+        ><span>Materials</span>
+      </div>
+    </div>
+    <div class="stat-mini">
+      <i class="pi pi-box stat-icon-sm"></i>
+      <div>
+        <strong>{{ formatWeight(summary?.totalWeightThisMonth || 0) }} kg</strong
+        ><span>Weight/Month</span>
+      </div>
+    </div>
+    <div class="stat-mini">
+      <i class="pi pi-clock stat-icon-sm"></i>
+      <div>
+        <strong>{{ summary?.avgProcessingTime || 0 }}h</strong><span>Avg Time</span>
+      </div>
+    </div>
+    <div class="stat-mini" (click)="navigateTo('/purchase-orders')">
+      <i class="pi pi-shopping-cart stat-icon-sm"></i>
+      <div>
+        <strong>{{ summary?.pendingPOCount || 0 }}</strong
+        ><span>Pending POs</span>
+      </div>
+    </div>
+    <div class="stat-mini">
+      <i class="pi pi-percentage stat-icon-sm"></i>
+      <div>
+        <strong>{{ summary?.qcPassRate || 0 }}%</strong><span>QC Pass Rate</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Charts Grid -->
+  <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 24px">
+    <div class="chart-card">
+      <div class="chart-header">
+        <h3><i class="pi pi-chart-line"></i> Weekly Trend</h3>
+        <span>Last 7 days</span>
+      </div>
+      <div class="chart-body">
+        @if (summary?.weeklyTrend?.length) {
+        <div class="bar-chart">
+          @for (day of summary!.weeklyTrend; track day.date) {
+          <div class="bar-item">
+            <div class="bar-wrapper">
+              <div class="bar-fill" [style.height.%]="getTrendBarWidth(day.count)">
+                <span>{{ day.count }}</span>
+              </div>
+            </div>
+            <span class="bar-label">{{ formatShortDate(day.date) }}</span>
+          </div>
+          }
+        </div>
+        } @else {
+        <div class="empty-state-sm">
+          <i class="pi pi-chart-bar"></i>
+          <p>No data</p>
+        </div>
+        }
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-header">
+        <h3><i class="pi pi-sitemap"></i> GRN Pipeline</h3>
+        <span>{{ getInProgressCount() }} in progress</span>
+      </div>
+      <div class="chart-body">
+        @if (summary?.grnByStep?.length) {
+        <div class="pipeline">
+          @for (step of summary!.grnByStep; track step.step) {
+          <div class="pipeline-row">
+            <span class="step-num">{{ step.step }}</span
+            ><span class="step-label">{{ getStepLabel(step.step) }}</span
+            ><span class="step-val">{{ step.count }}</span>
+          </div>
+          }
+        </div>
+        } @else {
+        <div class="empty-state-sm">
+          <i class="pi pi-check-circle"></i>
+          <p>No GRNs in progress</p>
+        </div>
+        }
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-header">
+        <h3><i class="pi pi-users"></i> Top Vendors</h3>
+        <span>This month</span>
+      </div>
+      <div class="chart-body">
+        @if (summary?.topVendors?.length) {
+        <div class="vendors-rank">
+          @for (v of summary!.topVendors; track v.vendorId; let i = $index) {
+          <div class="vendor-row">
+            <span
+              class="rank"
+              [class.gold]="i === 0"
+              [class.silver]="i === 1"
+              [class.bronze]="i === 2"
+              >{{ i + 1 }}</span
+            >
+            <div class="vendor-details">
+              <strong>{{ v.vendorName }}</strong
+              ><small>{{ v.grnCount }} GRNs</small>
+            </div>
+          </div>
+          }
+        </div>
+        } @else {
+        <div class="empty-state-sm">
+          <i class="pi pi-users"></i>
+          <p>No vendor data</p>
+        </div>
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Section -->
+  <div style="display: grid; grid-template-columns: 320px 1fr; gap: 20px">
+    <div class="status-card">
+      <div class="chart-header">
+        <h3><i class="pi pi-chart-pie"></i> Today's Status</h3>
+      </div>
+      <div class="chart-body">
+        @if (summary?.todayGRNStats?.length) {
+        <div class="status-list">
+          @for (stat of summary!.todayGRNStats; track stat.status) {
+          <div class="status-row">
+            <p-tag [value]="stat.status" [severity]="getStatusSeverity(stat.status)"></p-tag
+            ><strong>{{ stat.count }}</strong>
+          </div>
+          }
+        </div>
+        } @else {
+        <div class="empty-state-sm">
+          <i class="pi pi-inbox"></i>
+          <p>No GRNs today</p>
+        </div>
+        }
+      </div>
+    </div>
+    <div class="activity-card">
+      <div class="chart-header">
+        <h3><i class="pi pi-history"></i> Recent Activity</h3>
+        <p-button
+          label="View All"
+          [text]="true"
+          size="small"
+          (click)="navigateTo('/grn')"
+        ></p-button>
+      </div>
+      <div class="chart-body activity-body">
+        @if (summary?.recentActivity?.length) {
+        <p-table [value]="summary!.recentActivity" [scrollable]="true" scrollHeight="260px">
+          <ng-template pTemplate="header"
+            ><tr>
+              <th>GRN #</th>
+              <th>Vendor</th>
+              <th>Status</th>
+              <th>Step</th>
+              <th>Updated</th>
+            </tr></ng-template
+          >
+          <ng-template pTemplate="body" let-grn>
+            <tr class="clickable" (click)="navigateTo('/grn/' + grn.id)">
+              <td class="grn-num">{{ grn.grnNumber }}</td>
+              <td>{{ grn.vendor?.companyName || '-' }}</td>
+              <td>
+                <p-tag [value]="grn.status" [severity]="getStatusSeverity(grn.status)"></p-tag>
+              </td>
+              <td>{{ grn.currentStep }}</td>
+              <td class="date-col">{{ formatDate(grn.updatedAt) }}</td>
+            </tr>
+          </ng-template>
+        </p-table>
+        } @else {
+        <div class="empty-state">
+          <i class="pi pi-inbox"></i>
+          <p>No recent activity</p>
+          <p-button
+            label="Create GRN"
+            icon="pi pi-plus"
+            (click)="navigateTo('/grn/new')"
+          ></p-button>
+        </div>
+        }
+      </div>
+    </div>
+  </div>
+  }
+</div>

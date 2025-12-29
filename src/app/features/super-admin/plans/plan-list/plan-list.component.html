@@ -1,0 +1,91 @@
+<div class="plan-list">
+  <div class="page-header">
+    <h1>Plans</h1>
+    <p-button label="Add Plan" icon="pi pi-plus" (click)="openForm()"></p-button>
+  </div>
+
+  <p-table
+    [value]="plans"
+    [loading]="loading"
+    [paginator]="true"
+    [rows]="10"
+    [showCurrentPageReport]="true"
+    currentPageReportTemplate="Showing {first} to {last} of {totalRecords} plans"
+    styleClass="p-datatable-striped"
+  >
+    <ng-template pTemplate="header">
+      <tr>
+        <th>Name</th>
+        <th>Price</th>
+        <th>Billing Cycle</th>
+        <th>Modules</th>
+        <th>Status</th>
+        <th style="width: 120px">Actions</th>
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="body" let-plan>
+      <tr>
+        <td>
+          <div>
+            <strong>{{ plan.name }}</strong>
+            @if (plan.description) {
+            <div class="description">{{ plan.description }}</div>
+            }
+          </div>
+        </td>
+        <td>{{ plan.price | currency }}</td>
+        <td>{{ plan.billingCycle === 'monthly' ? 'Monthly' : 'Yearly' }}</td>
+        <td>
+          <div class="modules-list">
+            @for (module of plan.modules; track module.id) {
+            <p-chip [label]="module.name"></p-chip>
+            }
+          </div>
+        </td>
+        <td>
+          <p-tag
+            [value]="plan.isActive ? 'Active' : 'Inactive'"
+            [severity]="plan.isActive ? 'success' : 'danger'"
+          ></p-tag>
+        </td>
+        <td>
+          <div class="action-buttons">
+            <p-button
+              icon="pi pi-pencil"
+              [rounded]="true"
+              [text]="true"
+              severity="info"
+              (click)="openForm(plan)"
+            ></p-button>
+            <p-button
+              icon="pi pi-trash"
+              [rounded]="true"
+              [text]="true"
+              severity="danger"
+              (click)="confirmDelete(plan)"
+            ></p-button>
+          </div>
+        </td>
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="emptymessage">
+      <tr>
+        <td colspan="6" class="text-center">No plans found</td>
+      </tr>
+    </ng-template>
+  </p-table>
+</div>
+
+<p-dialog
+  [(visible)]="formVisible"
+  [header]="editingPlan ? 'Edit Plan' : 'Add Plan'"
+  [modal]="true"
+  [style]="{ width: '550px' }"
+  [closable]="true"
+>
+  <app-plan-form
+    [plan]="editingPlan"
+    (save)="onSave($event)"
+    (cancel)="closeForm()"
+  ></app-plan-form>
+</p-dialog>

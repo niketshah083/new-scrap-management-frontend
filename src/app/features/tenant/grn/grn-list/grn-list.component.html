@@ -1,0 +1,152 @@
+<div class="list-page">
+  <div class="page-header">
+    <h1><i class="pi pi-file-edit"></i> Goods Receipt Notes</h1>
+    <div class="header-actions">
+      <p-button label="New GRN" icon="pi pi-plus" (click)="createNew()"></p-button>
+    </div>
+  </div>
+
+  <div class="table-card">
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+      <div class="search-input">
+        <i class="pi pi-search"></i>
+        <input
+          type="text"
+          placeholder="Search by GRN number, vendor..."
+          [(ngModel)]="searchTerm"
+          (input)="onSearch()"
+        />
+      </div>
+      <div class="filter-select">
+        <p-select
+          [options]="statusOptions"
+          [(ngModel)]="selectedStatus"
+          (onChange)="onFilter()"
+          placeholder="All Status"
+          [showClear]="true"
+          appendTo="body"
+        ></p-select>
+      </div>
+    </div>
+
+    <!-- Stats Row -->
+    <div class="stats-row">
+      <div class="stat-item">
+        <div class="stat-icon blue"><i class="pi pi-list"></i></div>
+        <div class="stat-info">
+          <div class="stat-value">{{ totalCount }}</div>
+          <div class="stat-label">Total GRNs</div>
+        </div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-icon orange"><i class="pi pi-clock"></i></div>
+        <div class="stat-info">
+          <div class="stat-value">{{ inProgressCount }}</div>
+          <div class="stat-label">In Progress</div>
+        </div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-icon green"><i class="pi pi-check-circle"></i></div>
+        <div class="stat-info">
+          <div class="stat-value">{{ completedCount }}</div>
+          <div class="stat-label">Completed</div>
+        </div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-icon purple"><i class="pi pi-calendar"></i></div>
+        <div class="stat-info">
+          <div class="stat-value">{{ todayCount }}</div>
+          <div class="stat-label">Today</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <p-table
+      [value]="filteredGrns"
+      [loading]="loading"
+      [paginator]="true"
+      [rows]="10"
+      [rowsPerPageOptions]="[10, 25, 50]"
+      [showCurrentPageReport]="true"
+      currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th>GRN Number</th>
+          <th class="hide-mobile">PO Number</th>
+          <th>Vendor</th>
+          <th>Current Step</th>
+          <th>Status</th>
+          <th class="hide-mobile">Created</th>
+          <th style="width: 120px">Actions</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-grn>
+        <tr>
+          <td>
+            <span class="cell-link" (click)="viewGRN(grn)">{{ grn.grnNumber }}</span>
+          </td>
+          <td class="hide-mobile">
+            <span class="cell-muted">{{ grn.purchaseOrder?.poNumber || '-' }}</span>
+          </td>
+          <td>
+            <span class="cell-primary">{{
+              grn.vendor?.companyName || grn.purchaseOrder?.vendor?.companyName || '-'
+            }}</span>
+          </td>
+          <td>
+            <span class="cell-badge">
+              <span class="step-badge">{{ grn.currentStep }}</span>
+              {{ getStepLabel(grn.currentStep) }}
+            </span>
+          </td>
+          <td>
+            <p-tag
+              [value]="grn.status | titlecase"
+              [severity]="getStatusSeverity(grn.status)"
+            ></p-tag>
+          </td>
+          <td class="hide-mobile">
+            <span class="cell-muted">{{ grn.createdAt | date : 'mediumDate' }}</span>
+          </td>
+          <td>
+            <div class="action-buttons">
+              <p-button
+                icon="pi pi-eye"
+                [rounded]="true"
+                [text]="true"
+                severity="info"
+                pTooltip="View"
+                (click)="viewGRN(grn)"
+              ></p-button>
+              @if (grn.status !== 'completed' && grn.status !== 'rejected') {
+              <p-button
+                icon="pi pi-arrow-right"
+                [rounded]="true"
+                [text]="true"
+                severity="success"
+                pTooltip="Continue"
+                (click)="continueGRN(grn)"
+              ></p-button>
+              }
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="7">
+            <div class="empty-state">
+              <i class="pi pi-inbox"></i>
+              <h4>No GRNs Found</h4>
+              <p>Create your first GRN to get started</p>
+              <p-button label="Create GRN" icon="pi pi-plus" (click)="createNew()"></p-button>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+</div>

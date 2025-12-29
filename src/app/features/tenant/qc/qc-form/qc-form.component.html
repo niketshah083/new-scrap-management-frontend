@@ -1,0 +1,248 @@
+<div class="qc-form">
+  <div class="page-header">
+    <div class="header-left">
+      <p-button icon="pi pi-arrow-left" [text]="true" (click)="goBack()"></p-button>
+      <h1>QC Inspection</h1>
+      @if (qcInspection) {
+      <p-tag
+        [value]="qcInspection.status"
+        [severity]="getStatusSeverity(qcInspection.status)"
+      ></p-tag>
+      }
+    </div>
+  </div>
+
+  @if (loading) {
+  <p-card>
+    <div class="loading-state">
+      <i class="pi pi-spin pi-spinner"></i>
+      <p>Loading inspection...</p>
+    </div>
+  </p-card>
+  } @else if (qcInspection) {
+  <!-- GRN Info Card -->
+  <p-card styleClass="mb-4">
+    <ng-template pTemplate="header">
+      <div class="card-header">
+        <h3>GRN Information</h3>
+      </div>
+    </ng-template>
+    <div class="info-grid">
+      <div class="info-item">
+        <label>GRN Number</label>
+        <span>{{ qcInspection.grn?.grnNumber || '-' }}</span>
+      </div>
+      <div class="info-item">
+        <label>Vendor</label>
+        <span>{{ qcInspection.grn?.vendor?.companyName || '-' }}</span>
+      </div>
+      <div class="info-item">
+        <label>Material</label>
+        <span>{{ qcInspection.material?.name || 'Not specified' }}</span>
+      </div>
+    </div>
+  </p-card>
+
+  <!-- Inspection Form -->
+  <p-card>
+    <ng-template pTemplate="header">
+      <div class="card-header">
+        <h3>Quality Parameters</h3>
+      </div>
+    </ng-template>
+
+    <form [formGroup]="form">
+      <div class="form-grid">
+        <div class="form-field">
+          <label for="moistureContent">Moisture Content (%)</label>
+          <p-inputnumber
+            id="moistureContent"
+            formControlName="moistureContent"
+            [min]="0"
+            [max]="100"
+            [minFractionDigits]="2"
+            [maxFractionDigits]="2"
+            styleClass="w-full"
+            placeholder="Enter moisture %"
+            [disabled]="isCompleted()"
+          ></p-inputnumber>
+        </div>
+
+        <div class="form-field">
+          <label for="impurityPercentage">Impurity (%)</label>
+          <p-inputnumber
+            id="impurityPercentage"
+            formControlName="impurityPercentage"
+            [min]="0"
+            [max]="100"
+            [minFractionDigits]="2"
+            [maxFractionDigits]="2"
+            styleClass="w-full"
+            placeholder="Enter impurity %"
+            [disabled]="isCompleted()"
+          ></p-inputnumber>
+        </div>
+
+        <div class="form-field">
+          <label for="qualityGrade">Quality Grade (1-10)</label>
+          <p-inputnumber
+            id="qualityGrade"
+            formControlName="qualityGrade"
+            [min]="1"
+            [max]="10"
+            styleClass="w-full"
+            placeholder="Enter grade"
+            [disabled]="isCompleted()"
+          ></p-inputnumber>
+        </div>
+      </div>
+
+      <!-- Test Parameters -->
+      <div class="test-parameters-section">
+        <div class="section-header">
+          <h4>Test Parameters</h4>
+          @if (!isCompleted()) {
+          <p-button
+            label="Add Parameter"
+            icon="pi pi-plus"
+            size="small"
+            [text]="true"
+            (click)="addTestParameter()"
+          ></p-button>
+          }
+        </div>
+
+        @if (testParameters.length === 0) {
+        <p class="no-params">No test parameters added yet.</p>
+        } @else {
+        <div class="params-list">
+          @for (param of testParameters.controls; track $index; let i = $index) {
+          <div class="param-row" [formGroupName]="i">
+            <div class="param-field">
+              <label>Parameter Name</label>
+              <input
+                pInputText
+                formControlName="name"
+                placeholder="e.g., pH Level"
+                [readonly]="isCompleted()"
+              />
+            </div>
+            <div class="param-field">
+              <label>Expected</label>
+              <input
+                pInputText
+                formControlName="expectedValue"
+                placeholder="e.g., 6.5-7.5"
+                [readonly]="isCompleted()"
+              />
+            </div>
+            <div class="param-field">
+              <label>Actual</label>
+              <input
+                pInputText
+                formControlName="actualValue"
+                placeholder="e.g., 7.0"
+                [readonly]="isCompleted()"
+              />
+            </div>
+            <div class="param-field small">
+              <label>Unit</label>
+              <input
+                pInputText
+                formControlName="unit"
+                placeholder="e.g., pH"
+                [readonly]="isCompleted()"
+              />
+            </div>
+            <div class="param-field checkbox">
+              <label>Passed</label>
+              <p-checkbox
+                formControlName="passed"
+                [binary]="true"
+                [disabled]="isCompleted()"
+              ></p-checkbox>
+            </div>
+            @if (!isCompleted()) {
+            <p-button
+              icon="pi pi-trash"
+              [text]="true"
+              severity="danger"
+              (click)="removeTestParameter(i)"
+            ></p-button>
+            }
+          </div>
+          }
+        </div>
+        }
+      </div>
+
+      <!-- Remarks -->
+      <div class="form-field full-width">
+        <label for="remarks">Remarks</label>
+        <textarea
+          pInputTextarea
+          id="remarks"
+          formControlName="remarks"
+          rows="3"
+          placeholder="Enter any additional remarks..."
+          [readonly]="isCompleted()"
+        ></textarea>
+      </div>
+
+      <!-- Result Section (only show if not completed) -->
+      @if (!isCompleted()) {
+      <div class="result-section">
+        <h4>Inspection Result</h4>
+        <div class="form-grid">
+          <div class="form-field">
+            <app-select
+              id="result"
+              formControlName="result"
+              [options]="resultOptions"
+              label="Result"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="Select result"
+            ></app-select>
+          </div>
+          @if (form.value.result === 'fail') {
+          <div class="form-field">
+            <label for="failureReason">Failure Reason *</label>
+            <input
+              pInputText
+              id="failureReason"
+              formControlName="failureReason"
+              placeholder="Enter reason for failure"
+            />
+          </div>
+          }
+        </div>
+      </div>
+      }
+
+      <!-- Actions -->
+      <div class="form-actions">
+        <p-button label="Back" severity="secondary" [text]="true" (click)="goBack()"></p-button>
+        @if (!isCompleted()) {
+        <p-button
+          label="Save Progress"
+          icon="pi pi-save"
+          severity="secondary"
+          (click)="saveProgress()"
+          [loading]="saving"
+        ></p-button>
+        <p-button
+          label="Complete Inspection"
+          icon="pi pi-check"
+          (click)="completeInspection()"
+          [loading]="saving"
+          [disabled]="!form.value.result"
+        ></p-button>
+        }
+      </div>
+    </form>
+  </p-card>
+  }
+</div>
+
+<p-confirmDialog></p-confirmDialog>

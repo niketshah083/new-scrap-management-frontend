@@ -1,0 +1,51 @@
+<form [formGroup]="form" (ngSubmit)="onSubmit()">
+  <div class="form-fields">
+    <div class="form-field">
+      <label for="name">Name *</label>
+      <input pInputText id="name" formControlName="name" placeholder="Enter material name" />
+      @if (form.get('name')?.invalid && form.get('name')?.touched) {
+      <small class="error-text">Name is required</small>
+      }
+    </div>
+    <div class="form-field">
+      <label for="code">Code *</label>
+      <input
+        pInputText
+        id="code"
+        formControlName="code"
+        placeholder="Enter code"
+        [readonly]="!!material"
+      />
+      @if (form.get('code')?.invalid && form.get('code')?.touched) {
+      <small class="error-text">Code is required</small>
+      }
+    </div>
+    <div class="form-field">
+      <label for="unitOfMeasure">Unit of Measure *</label>
+      <input
+        pInputText
+        id="unitOfMeasure"
+        formControlName="unitOfMeasure"
+        placeholder="e.g., KG, MT, Pieces"
+      />
+      @if (form.get('unitOfMeasure')?.invalid && form.get('unitOfMeasure')?.touched) {
+      <small class="error-text">Unit of measure is required</small>
+      }
+    </div>
+    <div class="form-field">
+      <label for="category">Category *</label>
+      <input pInputText id="category" formControlName="category" placeholder="Enter category" />
+      @if (form.get('category')?.invalid && form.get('category')?.touched) {
+      <small class="error-text">Category is required</small>
+      }
+    </div>
+  </div>
+  <div class="form-actions">
+    <p-button label="Cancel" severity="secondary" [text]="true" (click)="onCancel()"></p-button>
+    <p-button
+      type="submit"
+      [label]="material ? 'Update' : 'Create'"
+      [disabled]="form.invalid"
+    ></p-button>
+  </div>
+</form>

@@ -1,0 +1,247 @@
+<div class="list-page">
+  <div class="page-header">
+    <h1><i class="pi pi-check-square"></i> Lab QC</h1>
+    <div class="header-actions">
+      <p-button
+        label="Refresh"
+        icon="pi pi-refresh"
+        [outlined]="true"
+        (click)="loadData()"
+      ></p-button>
+    </div>
+  </div>
+
+  <div class="table-card">
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+      <div class="search-input">
+        <i class="pi pi-search"></i>
+        <input
+          type="text"
+          placeholder="Search by GRN number, material..."
+          [(ngModel)]="searchValue"
+        />
+      </div>
+      <div class="filter-select">
+        <p-select
+          [options]="statusOptions"
+          [(ngModel)]="selectedStatus"
+          (onChange)="onStatusFilter()"
+          placeholder="All Status"
+          [showClear]="true"
+          appendTo="body"
+        ></p-select>
+      </div>
+    </div>
+
+    <!-- Stats Row -->
+    <div class="stats-row">
+      <div class="stat-item">
+        <div class="stat-icon orange"><i class="pi pi-clock"></i></div>
+        <div class="stat-info">
+          <div class="stat-value">{{ pendingGRNs.length }}</div>
+          <div class="stat-label">Pending QC</div>
+        </div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-icon blue"><i class="pi pi-spinner"></i></div>
+        <div class="stat-info">
+          <div class="stat-value">{{ inProgressCount }}</div>
+          <div class="stat-label">In Progress</div>
+        </div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-icon green"><i class="pi pi-check-circle"></i></div>
+        <div class="stat-info">
+          <div class="stat-value">{{ passedCount }}</div>
+          <div class="stat-label">Passed</div>
+        </div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-icon red"><i class="pi pi-times-circle"></i></div>
+        <div class="stat-info">
+          <div class="stat-value">{{ failedCount }}</div>
+          <div class="stat-label">Failed</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <p-tabs [value]="activeTab" (onChange)="onTabChange($event)">
+      <p-tablist>
+        <p-tab [value]="0">
+          <span class="tab-label">
+            <i class="pi pi-inbox"></i> Pending GRNs @if (pendingGRNs.length > 0) {
+            <span class="tab-badge">{{ pendingGRNs.length }}</span>
+            }
+          </span>
+        </p-tab>
+        <p-tab [value]="1">
+          <span class="tab-label">
+            <i class="pi pi-clipboard"></i> QC Inspections @if (qcInspections.length > 0) {
+            <span class="tab-badge">{{ qcInspections.length }}</span>
+            }
+          </span>
+        </p-tab>
+      </p-tablist>
+
+      <p-tabpanels>
+        <!-- Pending GRNs Tab -->
+        <p-tabpanel [value]="0">
+          <p-table
+            [value]="filteredPendingGRNs"
+            [loading]="loading"
+            [paginator]="true"
+            [rows]="10"
+            [rowsPerPageOptions]="[10, 25, 50]"
+            [showCurrentPageReport]="true"
+            currentPageReportTemplate="Showing {first} to {last} of {totalRecords} GRNs"
+          >
+            <ng-template pTemplate="header">
+              <tr>
+                <th>GRN Number</th>
+                <th>Vendor</th>
+                <th>Net Weight</th>
+                <th class="hide-mobile">Completed At</th>
+                <th style="width: 140px">Actions</th>
+              </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-grn>
+              <tr>
+                <td>
+                  <span class="cell-link">{{ grn.grnNumber }}</span>
+                </td>
+                <td>
+                  <span class="cell-primary">{{ grn.vendor?.companyName || '-' }}</span>
+                </td>
+                <td>
+                  <span class="cell-badge">
+                    <span class="weight-badge">{{
+                      grn.netWeight ? grn.netWeight + ' kg' : '-'
+                    }}</span>
+                  </span>
+                </td>
+                <td class="hide-mobile">
+                  <span class="cell-muted">{{ formatDate(grn.updatedAt) }}</span>
+                </td>
+                <td>
+                  <div class="action-buttons">
+                    <p-button
+                      label="Start QC"
+                      icon="pi pi-play"
+                      size="small"
+                      severity="success"
+                      (click)="createQCInspection(grn)"
+                    ></p-button>
+                  </div>
+                </td>
+              </tr>
+            </ng-template>
+            <ng-template pTemplate="emptymessage">
+              <tr>
+                <td colspan="5">
+                  <div class="empty-state">
+                    <i class="pi pi-inbox"></i>
+                    <h4>No GRNs Pending QC</h4>
+                    <p>GRNs will appear here after gate pass is used</p>
+                  </div>
+                </td>
+              </tr>
+            </ng-template>
+          </p-table>
+        </p-tabpanel>
+
+        <!-- QC Inspections Tab -->
+        <p-tabpanel [value]="1">
+          <p-table
+            [value]="filteredQCInspections"
+            [loading]="loading"
+            [paginator]="true"
+            [rows]="10"
+            [rowsPerPageOptions]="[10, 25, 50]"
+            [showCurrentPageReport]="true"
+            currentPageReportTemplate="Showing {first} to {last} of {totalRecords} inspections"
+          >
+            <ng-template pTemplate="header">
+              <tr>
+                <th>GRN Number</th>
+                <th>Material</th>
+                <th>Status</th>
+                <th class="hide-mobile">Quality Grade</th>
+                <th class="hide-mobile">Inspected At</th>
+                <th style="width: 100px">Actions</th>
+              </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-qc>
+              <tr>
+                <td>
+                  <span class="cell-link" (click)="viewQCInspection(qc)">{{
+                    qc.grn?.grnNumber || '-'
+                  }}</span>
+                </td>
+                <td>
+                  <span class="cell-primary">{{ qc.material?.name || '-' }}</span>
+                </td>
+                <td>
+                  <p-tag
+                    [value]="getStatusLabel(qc.status)"
+                    [severity]="getStatusSeverity(qc.status)"
+                  ></p-tag>
+                </td>
+                <td class="hide-mobile">
+                  <span class="cell-badge">
+                    @if (qc.qualityGrade) {
+                    <span class="grade-badge grade-{{ qc.qualityGrade?.toLowerCase() }}">{{
+                      qc.qualityGrade
+                    }}</span>
+                    } @else {
+                    <span class="cell-muted">-</span>
+                    }
+                  </span>
+                </td>
+                <td class="hide-mobile">
+                  <span class="cell-muted">{{ formatDate(qc.inspectedAt) }}</span>
+                </td>
+                <td>
+                  <div class="action-buttons">
+                    <p-button
+                      icon="pi pi-eye"
+                      [rounded]="true"
+                      [text]="true"
+                      severity="info"
+                      pTooltip="View"
+                      (click)="viewQCInspection(qc)"
+                    ></p-button>
+                    @if (qc.status === 'pending' || qc.status === 'in_progress') {
+                    <p-button
+                      icon="pi pi-pencil"
+                      [rounded]="true"
+                      [text]="true"
+                      severity="success"
+                      pTooltip="Continue"
+                      (click)="viewQCInspection(qc)"
+                    ></p-button>
+                    }
+                  </div>
+                </td>
+              </tr>
+            </ng-template>
+            <ng-template pTemplate="emptymessage">
+              <tr>
+                <td colspan="6">
+                  <div class="empty-state">
+                    <i class="pi pi-clipboard"></i>
+                    <h4>No QC Inspections Found</h4>
+                    <p>Start a QC inspection from the Pending GRNs tab</p>
+                  </div>
+                </td>
+              </tr>
+            </ng-template>
+          </p-table>
+        </p-tabpanel>
+      </p-tabpanels>
+    </p-tabs>
+  </div>
+</div>
+
+<p-confirmDialog></p-confirmDialog>

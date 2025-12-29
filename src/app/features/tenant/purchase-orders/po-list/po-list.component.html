@@ -1,0 +1,149 @@
+<div class="list-page">
+  <div class="page-header">
+    <h1><i class="pi pi-shopping-cart"></i> Purchase Orders</h1>
+    <div class="header-actions">
+      <p-button label="Create PO" icon="pi pi-plus" (click)="createNew()"></p-button>
+    </div>
+  </div>
+
+  <div class="table-card">
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+      <div class="search-input">
+        <i class="pi pi-search"></i>
+        <input
+          type="text"
+          placeholder="Search by PO number or vendor..."
+          [(ngModel)]="searchTerm"
+          (input)="onSearch()"
+        />
+      </div>
+      <div class="filter-select">
+        <p-select
+          [options]="statusOptions"
+          [(ngModel)]="selectedStatus"
+          (onChange)="onFilter()"
+          placeholder="All Status"
+          [showClear]="true"
+          appendTo="body"
+        ></p-select>
+      </div>
+    </div>
+
+    <!-- Stats Row -->
+    <div class="stats-row">
+      <div class="stat-item">
+        <div class="stat-icon blue"><i class="pi pi-shopping-cart"></i></div>
+        <div class="stat-info">
+          <div class="stat-value">{{ totalCount }}</div>
+          <div class="stat-label">Total POs</div>
+        </div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-icon orange"><i class="pi pi-file-edit"></i></div>
+        <div class="stat-info">
+          <div class="stat-value">{{ draftCount }}</div>
+          <div class="stat-label">Draft</div>
+        </div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-icon green"><i class="pi pi-check-circle"></i></div>
+        <div class="stat-info">
+          <div class="stat-value">{{ confirmedCount }}</div>
+          <div class="stat-label">Confirmed</div>
+        </div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-icon purple"><i class="pi pi-dollar"></i></div>
+        <div class="stat-info">
+          <div class="stat-value">{{ totalAmount | currency : 'INR' : 'symbol' : '1.0-0' }}</div>
+          <div class="stat-label">Total Value</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <p-table
+      [value]="filteredPOs"
+      [loading]="loading"
+      [paginator]="true"
+      [rows]="10"
+      [rowsPerPageOptions]="[10, 25, 50]"
+      [showCurrentPageReport]="true"
+      currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th>PO Number</th>
+          <th>Vendor</th>
+          <th class="hide-mobile">PO Date</th>
+          <th class="hide-mobile">Expected Delivery</th>
+          <th>Total Amount</th>
+          <th>Status</th>
+          <th style="width: 120px">Actions</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-po>
+        <tr>
+          <td>
+            <span class="cell-link" (click)="editPO(po)">{{ po.poNumber }}</span>
+          </td>
+          <td>
+            <span class="cell-primary">{{ po.vendor?.companyName || '-' }}</span>
+          </td>
+          <td class="hide-mobile">
+            <span class="cell-muted">{{ po.poDate | date : 'mediumDate' }}</span>
+          </td>
+          <td class="hide-mobile">
+            <span class="cell-muted">{{
+              po.expectedDeliveryDate ? (po.expectedDeliveryDate | date : 'mediumDate') : '-'
+            }}</span>
+          </td>
+          <td>
+            <span class="cell-primary">{{ po.totalAmount | currency : 'INR' }}</span>
+          </td>
+          <td>
+            <p-tag
+              [value]="po.status | titlecase"
+              [severity]="getStatusSeverity(po.status)"
+            ></p-tag>
+          </td>
+          <td>
+            <div class="action-buttons">
+              <p-button
+                icon="pi pi-pencil"
+                [rounded]="true"
+                [text]="true"
+                severity="info"
+                pTooltip="Edit"
+                (click)="editPO(po)"
+              ></p-button>
+              @if (po.status === 'draft') {
+              <p-button
+                icon="pi pi-trash"
+                [rounded]="true"
+                [text]="true"
+                severity="danger"
+                pTooltip="Delete"
+                (click)="confirmDelete(po)"
+              ></p-button>
+              }
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="7">
+            <div class="empty-state">
+              <i class="pi pi-shopping-cart"></i>
+              <h4>No Purchase Orders Found</h4>
+              <p>Create your first purchase order to get started</p>
+              <p-button label="Create PO" icon="pi pi-plus" (click)="createNew()"></p-button>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+</div>

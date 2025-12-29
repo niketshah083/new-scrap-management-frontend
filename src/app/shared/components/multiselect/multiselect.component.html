@@ -1,0 +1,34 @@
+<div class="field">
+  @if (effectiveLabel) {
+  <label [for]="id" class="block text-sm font-medium text-gray-700 mb-1">
+    {{ effectiveLabel }}
+    @if (effectiveRequired) {
+    <span class="text-red-500">*</span>
+    }
+  </label>
+  }
+
+  <p-multiselect
+    [id]="id"
+    [(ngModel)]="value"
+    [options]="options"
+    [placeholder]="effectivePlaceholder"
+    [disabled]="disabled || config.disabled || false"
+    [filter]="effectiveFilter"
+    [filterPlaceHolder]="'Search...'"
+    [showClear]="effectiveShowClear"
+    [maxSelectedLabels]="effectiveMaxSelectedLabels"
+    [optionLabel]="effectiveOptionLabel"
+    [optionValue]="effectiveOptionValue"
+    [display]="effectiveDisplay"
+    [scrollHeight]="'250px'"
+    [resetFilterOnHide]="true"
+    (ngModelChange)="onSelectionChange($event)"
+    (onBlur)="onBlur()"
+    appendTo="body"
+  />
+
+  @if (config.errorMessage) {
+  <small class="text-red-500 text-xs mt-1 block">{{ config.errorMessage }}</small>
+  }
+</div>

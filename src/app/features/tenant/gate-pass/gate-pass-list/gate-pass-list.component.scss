@@ -1,0 +1,70 @@
+.gate-pass-list {
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: #1e293b;
+      margin: 0;
+    }
+  }
+
+  .table-header {
+    margin-bottom: 1rem;
+
+    .p-input-icon-left {
+      width: 300px;
+
+      input {
+        width: 100%;
+        padding-left: 2.5rem;
+      }
+
+      i {
+        left: 0.75rem;
+        color: #94a3b8;
+      }
+    }
+  }
+
+  .pass-number {
+    font-family: monospace;
+    font-weight: 600;
+    color: #3b82f6;
+  }
+
+  .expired {
+    color: #ef4444;
+  }
+
+  .action-buttons {
+    display: flex;
+    gap: 0.25rem;
+  }
+
+  .empty-state {
+    padding: 3rem 1rem;
+    text-align: center;
+    color: #64748b;
+
+    i {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      color: #cbd5e1;
+    }
+
+    p {
+      font-size: 1.125rem;
+      font-weight: 500;
+      margin: 0 0 0.5rem 0;
+    }
+
+    span {
+      font-size: 0.875rem;
+    }
+  }
+}

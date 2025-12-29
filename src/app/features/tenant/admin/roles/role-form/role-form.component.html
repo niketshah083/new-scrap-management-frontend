@@ -1,0 +1,51 @@
+<form [formGroup]="form" (ngSubmit)="onSubmit()">
+  <div class="form-fields">
+    <div class="form-field">
+      <label for="name">Name *</label>
+      <input pInputText id="name" formControlName="name" placeholder="Enter role name" />
+      @if (form.get('name')?.invalid && form.get('name')?.touched) {
+      <small class="error-text">Name is required</small>
+      }
+    </div>
+    <div class="form-field">
+      <label for="description">Description</label>
+      <textarea
+        pInputTextarea
+        id="description"
+        formControlName="description"
+        placeholder="Enter description"
+        rows="2"
+      ></textarea>
+    </div>
+    <div class="form-field">
+      <label for="permissionIds">Permissions *</label>
+      <p-multiselect
+        id="permissionIds"
+        formControlName="permissionIds"
+        [options]="permissionOptions"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Select permissions"
+        display="chip"
+        [filter]="true"
+        filterBy="label"
+        filterMatchMode="contains"
+        [showClear]="true"
+        [maxSelectedLabels]="3"
+        [scrollHeight]="'250px'"
+        appendTo="body"
+      ></p-multiselect>
+      @if (form.get('permissionIds')?.invalid && form.get('permissionIds')?.touched) {
+      <small class="error-text">At least one permission is required</small>
+      }
+    </div>
+  </div>
+  <div class="form-actions">
+    <p-button label="Cancel" severity="secondary" [text]="true" (click)="onCancel()"></p-button>
+    <p-button
+      type="submit"
+      [label]="role ? 'Update' : 'Create'"
+      [disabled]="form.invalid"
+    ></p-button>
+  </div>
+</form>

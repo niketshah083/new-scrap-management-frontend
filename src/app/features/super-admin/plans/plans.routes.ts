@@ -1,0 +1,8 @@
+import { Routes } from '@angular/router';
+
+export const PLANS_ROUTES: Routes = [
+  {
+    path: '',
+    loadComponent: () => import('./plan-list/plan-list.component').then((m) => m.PlanListComponent),
+  },
+];

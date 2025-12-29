@@ -1,0 +1,734 @@
+<div class="grn-wizard-container">
+  <!-- Header -->
+  <div class="wizard-header">
+    <div class="header-left">
+      <button class="back-btn" (click)="goBack()">
+        <i class="pi pi-arrow-left"></i>
+      </button>
+      <div class="header-info">
+        <h1>{{ grnId ? 'Continue GRN' : 'New GRN' }}</h1>
+        @if (grn && grn.grnNumber) {
+        <span class="grn-number">{{ grn.grnNumber }}</span>
+        }
+      </div>
+    </div>
+    @if (grn) {
+    <div class="header-right">
+      <span class="status-badge" [class]="grn.status">{{ grn.status | titlecase }}</span>
+    </div>
+    }
+  </div>
+
+  <!-- Step Progress -->
+  <div class="step-progress">
+    <div class="progress-track">
+      <div
+        class="progress-fill"
+        [style.width.%]="((currentStep - 1) / (steps.length - 1)) * 100"
+      ></div>
+    </div>
+    <div class="steps-container">
+      @for (step of steps; track step.step) {
+      <div
+        class="step-item"
+        [class.active]="currentStep === step.step"
+        [class.completed]="currentStep > step.step"
+        [class.clickable]="grnId && grn && step.step <= grn.currentStep"
+      >
+        <div class="step-circle">
+          @if (currentStep > step.step) {
+          <i class="pi pi-check"></i>
+          } @else {
+          {{ step.step }}
+          }
+        </div>
+        <span class="step-title">{{ step.label }}</span>
+      </div>
+      }
+    </div>
+  </div>
+
+  <!-- Main Content Card -->
+  <div class="wizard-content">
+    <!-- Step 1: Gate Entry -->
+    @if (currentStep === 1) {
+    <div class="step-card">
+      <div class="step-header">
+        <div class="step-icon blue">
+          <i class="pi pi-sign-in"></i>
+        </div>
+        <div class="step-info">
+          <h2>Gate Entry</h2>
+          <p>Record vehicle arrival and vendor details</p>
+        </div>
+      </div>
+
+      <form [formGroup]="form" (ngSubmit)="onSubmitStep()">
+        <div class="form-section">
+          <h3 class="section-title"><i class="pi pi-truck"></i> Vehicle Information</h3>
+          <div class="form-grid">
+            <div class="form-field">
+              <app-select
+                id="purchaseOrderId"
+                formControlName="purchaseOrderId"
+                [options]="purchaseOrders"
+                label="Purchase Order"
+                optionLabel="poNumber"
+                optionValue="id"
+                placeholder="Select PO (optional)"
+                [showClear]="true"
+              ></app-select>
+            </div>
+            <div class="form-field">
+              <app-select
+                id="vendorId"
+                formControlName="vendorId"
+                [options]="vendors"
+                label="Vendor"
+                optionLabel="companyName"
+                optionValue="id"
+                placeholder="Select vendor (optional)"
+                [showClear]="true"
+              ></app-select>
+            </div>
+            <div class="form-field">
+              <label for="truckNumber">Truck Number <span class="required">*</span></label>
+              <input
+                pInputText
+                id="truckNumber"
+                formControlName="truckNumber"
+                placeholder="e.g., MH-12-AB-1234"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- Dynamic fields for Step 1 -->
+        @if (fieldConfigs.length > 0) {
+        <div class="form-section">
+          <h3 class="section-title"><i class="pi pi-list"></i> Additional Details</h3>
+          <div class="form-grid" [formGroup]="dynamicForm">
+            @for (field of fieldConfigs; track field.id) {
+            <div
+              class="form-field"
+              [class.full-width]="field.fieldType === 'text' && field.fieldName.includes('notes')"
+            >
+              <label [for]="field.fieldName">
+                {{ field.fieldLabel }}
+                @if (field.isRequired) { <span class="required">*</span> }
+              </label>
+              <ng-container [ngSwitch]="field.fieldType">
+                <ng-container *ngSwitchCase="'text'">
+                  @if (field.fieldName.includes('notes') || field.fieldName.includes('remarks')) {
+                  <textarea
+                    pInputTextarea
+                    [id]="field.fieldName"
+                    [formControlName]="field.fieldName"
+                    rows="3"
+                    [placeholder]="'Enter ' + field.fieldLabel.toLowerCase()"
+                  ></textarea>
+                  } @else {
+                  <input
+                    pInputText
+                    [id]="field.fieldName"
+                    [formControlName]="field.fieldName"
+                    [placeholder]="'Enter ' + field.fieldLabel.toLowerCase()"
+                  />
+                  }
+                </ng-container>
+                <p-inputnumber
+                  *ngSwitchCase="'number'"
+                  [id]="field.fieldName"
+                  [formControlName]="field.fieldName"
+                  [min]="0"
+                  class="w-full"
+                  [placeholder]="'Enter ' + field.fieldLabel.toLowerCase()"
+                ></p-inputnumber>
+                <p-datepicker
+                  *ngSwitchCase="'date'"
+                  [id]="field.fieldName"
+                  [formControlName]="field.fieldName"
+                  [showTime]="true"
+                  [showIcon]="true"
+                  class="w-full"
+                  dateFormat="dd/mm/yy"
+                  appendTo="body"
+                ></p-datepicker>
+                <app-select
+                  *ngSwitchCase="'dropdown'"
+                  [id]="field.fieldName"
+                  [formControlName]="field.fieldName"
+                  [options]="getDropdownOptions(field)"
+                  optionLabel="label"
+                  optionValue="value"
+                  [placeholder]="'Select ' + field.fieldLabel.toLowerCase()"
+                ></app-select>
+                <app-file-upload
+                  *ngSwitchCase="'photo'"
+                  [formControlName]="field.fieldName"
+                  [placeholder]="'Upload ' + field.fieldLabel.toLowerCase()"
+                  accept="image/*"
+                  [showCamera]="true"
+                  [showFileUpload]="true"
+                  [required]="field.isRequired"
+                  [multiple]="field.allowMultiple"
+                  [maxFiles]="field.maxFiles || 5"
+                  (fileSelected)="onFileUploaded($event, field.fieldName)"
+                  (filesSelected)="onFilesUploaded($event, field.fieldName)"
+                ></app-file-upload>
+                <app-file-upload
+                  *ngSwitchCase="'file'"
+                  [formControlName]="field.fieldName"
+                  [placeholder]="'Upload ' + field.fieldLabel.toLowerCase()"
+                  accept="*/*"
+                  [showCamera]="true"
+                  [showFileUpload]="true"
+                  [required]="field.isRequired"
+                  [multiple]="field.allowMultiple"
+                  [maxFiles]="field.maxFiles || 5"
+                  (fileSelected)="onFileUploaded($event, field.fieldName)"
+                  (filesSelected)="onFilesUploaded($event, field.fieldName)"
+                ></app-file-upload>
+              </ng-container>
+            </div>
+            }
+          </div>
+        </div>
+        }
+
+        <div class="form-actions">
+          <p-button
+            label="Cancel"
+            severity="secondary"
+            [outlined]="true"
+            (click)="goBack()"
+          ></p-button>
+          <p-button
+            type="submit"
+            label="Continue"
+            icon="pi pi-arrow-right"
+            iconPos="right"
+            [loading]="loading"
+          ></p-button>
+        </div>
+      </form>
+    </div>
+    }
+
+    <!-- Steps 2-5: Dynamic fields -->
+    @if (currentStep >= 2 && currentStep <= 5) {
+    <div class="step-card">
+      <div class="step-header">
+        <div
+          class="step-icon"
+          [ngClass]="{
+            orange: currentStep === 2,
+            purple: currentStep === 3,
+            green: currentStep === 4,
+            amber: currentStep === 5
+          }"
+        >
+          <i [class]="getStepIcon(currentStep)"></i>
+        </div>
+        <div class="step-info">
+          <h2>{{ steps[currentStep - 1].label }}</h2>
+          <p>{{ getStepDescription(currentStep) }}</p>
+        </div>
+      </div>
+
+      <form [formGroup]="dynamicForm" (ngSubmit)="onSubmitStep()">
+        @if (fieldConfigs.length === 0) {
+        <div class="empty-step">
+          <i class="pi pi-info-circle"></i>
+          <h4>No Fields Configured</h4>
+          <p>Contact your administrator to set up fields for this step.</p>
+        </div>
+        } @else {
+        <div class="form-section">
+          <div class="form-grid">
+            @for (field of fieldConfigs; track field.id) {
+            <div
+              class="form-field"
+              [class.full-width]="field.fieldType === 'text' && field.fieldName.includes('notes')"
+            >
+              <label [for]="field.fieldName">
+                {{ field.fieldLabel }}
+                @if (field.isRequired) { <span class="required">*</span> }
+              </label>
+              <ng-container [ngSwitch]="field.fieldType">
+                <ng-container *ngSwitchCase="'text'">
+                  @if (field.fieldName.includes('notes') || field.fieldName.includes('remarks')) {
+                  <textarea
+                    pInputTextarea
+                    [id]="field.fieldName"
+                    [formControlName]="field.fieldName"
+                    rows="3"
+                    [placeholder]="'Enter ' + field.fieldLabel.toLowerCase()"
+                  ></textarea>
+                  } @else {
+                  <input
+                    pInputText
+                    [id]="field.fieldName"
+                    [formControlName]="field.fieldName"
+                    [placeholder]="'Enter ' + field.fieldLabel.toLowerCase()"
+                  />
+                  }
+                </ng-container>
+                <p-inputnumber
+                  *ngSwitchCase="'number'"
+                  [id]="field.fieldName"
+                  [formControlName]="field.fieldName"
+                  [min]="0"
+                  class="w-full"
+                  [placeholder]="'Enter ' + field.fieldLabel.toLowerCase()"
+                ></p-inputnumber>
+                <p-datepicker
+                  *ngSwitchCase="'date'"
+                  [id]="field.fieldName"
+                  [formControlName]="field.fieldName"
+                  [showTime]="true"
+                  [showIcon]="true"
+                  class="w-full"
+                  dateFormat="dd/mm/yy"
+                  appendTo="body"
+                ></p-datepicker>
+                <app-select
+                  *ngSwitchCase="'dropdown'"
+                  [id]="field.fieldName"
+                  [formControlName]="field.fieldName"
+                  [options]="getDropdownOptions(field)"
+                  optionLabel="label"
+                  optionValue="value"
+                  [placeholder]="'Select ' + field.fieldLabel.toLowerCase()"
+                ></app-select>
+                <app-file-upload
+                  *ngSwitchCase="'photo'"
+                  [formControlName]="field.fieldName"
+                  [placeholder]="'Upload ' + field.fieldLabel.toLowerCase()"
+                  accept="image/*"
+                  [showCamera]="true"
+                  [showFileUpload]="true"
+                  [required]="field.isRequired"
+                  [multiple]="field.allowMultiple"
+                  [maxFiles]="field.maxFiles || 5"
+                  (fileSelected)="onFileUploaded($event, field.fieldName)"
+                  (filesSelected)="onFilesUploaded($event, field.fieldName)"
+                ></app-file-upload>
+                <app-file-upload
+                  *ngSwitchCase="'file'"
+                  [formControlName]="field.fieldName"
+                  [placeholder]="'Upload ' + field.fieldLabel.toLowerCase()"
+                  accept="*/*"
+                  [showCamera]="true"
+                  [showFileUpload]="true"
+                  [required]="field.isRequired"
+                  [multiple]="field.allowMultiple"
+                  [maxFiles]="field.maxFiles || 5"
+                  (fileSelected)="onFileUploaded($event, field.fieldName)"
+                  (filesSelected)="onFilesUploaded($event, field.fieldName)"
+                ></app-file-upload>
+              </ng-container>
+            </div>
+            }
+          </div>
+        </div>
+
+        <!-- Net weight calculation for step 4 -->
+        @if (currentStep === 4 && grn && grn.grossWeight && dynamicForm.value.tare_weight) {
+        <div class="weight-calculation">
+          <div class="weight-item">
+            <span class="weight-label">Gross Weight</span>
+            <span class="weight-value">{{ grn.grossWeight }} kg</span>
+          </div>
+          <div class="weight-operator">−</div>
+          <div class="weight-item">
+            <span class="weight-label">Tare Weight</span>
+            <span class="weight-value">{{ dynamicForm.value.tare_weight }} kg</span>
+          </div>
+          <div class="weight-operator">=</div>
+          <div class="weight-item result">
+            <span class="weight-label">Net Weight</span>
+            <span class="weight-value"
+              >{{ (grn.grossWeight || 0) - (dynamicForm.value.tare_weight || 0) }} kg</span
+            >
+          </div>
+        </div>
+        } }
+
+        <!-- Step 5: Summary and Approval -->
+        @if (currentStep === 5) {
+        <div class="review-section">
+          <h3 class="section-title"><i class="pi pi-list"></i> GRN Summary</h3>
+
+          <!-- Summary Cards -->
+          <div class="summary-cards">
+            <!-- Step 1 Summary -->
+            <div class="summary-card">
+              <div class="summary-card-header">
+                <span class="step-badge">1</span>
+                <span>Gate Entry</span>
+              </div>
+              <div class="summary-card-body">
+                <div class="summary-row">
+                  <span>GRN Number</span><strong>{{ grn?.grnNumber || '-' }}</strong>
+                </div>
+                <div class="summary-row">
+                  <span>Vendor</span><strong>{{ grn?.vendor?.companyName || '-' }}</strong>
+                </div>
+                <div class="summary-row">
+                  <span>Truck Number</span><strong>{{ grn?.truckNumber || '-' }}</strong>
+                </div>
+                <div class="summary-row">
+                  <span>Purchase Order</span
+                  ><strong>{{ grn?.purchaseOrder?.poNumber || 'N/A' }}</strong>
+                </div>
+                @for (fv of getFieldValuesByStep(1); track fv.id) {
+                <div class="summary-row" [class.full-width]="isImageField(fv)">
+                  <span>{{ fv.fieldConfig?.fieldLabel || fv.fieldConfigId }}</span>
+                  @if (isImageField(fv)) {
+                  <div class="image-chips">
+                    @for (img of getImageUrls(fv); track img.key) {
+                    <span
+                      class="image-chip"
+                      (click)="openImagePreview(img.url, fv.fieldConfig?.fieldLabel || 'Image')"
+                    >
+                      <i class="pi pi-image"></i> {{ img.key }}
+                    </span>
+                    }
+                  </div>
+                  } @else {
+                  <strong>{{ formatFieldValue(fv) }}</strong>
+                  }
+                </div>
+                }
+              </div>
+            </div>
+
+            <!-- Step 2 Summary -->
+            <div class="summary-card">
+              <div class="summary-card-header">
+                <span class="step-badge">2</span>
+                <span>Initial Weighing</span>
+              </div>
+              <div class="summary-card-body">
+                <div class="summary-row highlight">
+                  <span>Gross Weight</span
+                  ><strong class="text-blue">{{ grn?.grossWeight || '-' }} kg</strong>
+                </div>
+                @for (fv of getFieldValuesByStep(2); track fv.id) {
+                <div class="summary-row" [class.full-width]="isImageField(fv)">
+                  <span>{{ fv.fieldConfig?.fieldLabel || fv.fieldConfigId }}</span>
+                  @if (isImageField(fv)) {
+                  <div class="image-chips">
+                    @for (img of getImageUrls(fv); track img.key) {
+                    <span
+                      class="image-chip"
+                      (click)="openImagePreview(img.url, fv.fieldConfig?.fieldLabel || 'Image')"
+                    >
+                      <i class="pi pi-image"></i> {{ img.key }}
+                    </span>
+                    }
+                  </div>
+                  } @else {
+                  <strong>{{ formatFieldValue(fv) }}</strong>
+                  }
+                </div>
+                }
+              </div>
+            </div>
+
+            <!-- Step 3 Summary -->
+            <div class="summary-card">
+              <div class="summary-card-header">
+                <span class="step-badge">3</span>
+                <span>Unloading</span>
+              </div>
+              <div class="summary-card-body">
+                @for (fv of getFieldValuesByStep(3); track fv.id) {
+                <div class="summary-row" [class.full-width]="isImageField(fv)">
+                  <span>{{ fv.fieldConfig?.fieldLabel || fv.fieldConfigId }}</span>
+                  @if (isImageField(fv)) {
+                  <div class="image-chips">
+                    @for (img of getImageUrls(fv); track img.key) {
+                    <span
+                      class="image-chip"
+                      (click)="openImagePreview(img.url, fv.fieldConfig?.fieldLabel || 'Image')"
+                    >
+                      <i class="pi pi-image"></i> {{ img.key }}
+                    </span>
+                    }
+                  </div>
+                  } @else {
+                  <strong>{{ formatFieldValue(fv) }}</strong>
+                  }
+                </div>
+                } @if (getFieldValuesByStep(3).length === 0) {
+                <div class="no-data">No data recorded</div>
+                }
+              </div>
+            </div>
+
+            <!-- Step 4 Summary -->
+            <div class="summary-card">
+              <div class="summary-card-header">
+                <span class="step-badge">4</span>
+                <span>Final Weighing</span>
+              </div>
+              <div class="summary-card-body">
+                <div class="summary-row">
+                  <span>Tare Weight</span
+                  ><strong class="text-blue">{{ grn?.tareWeight || '-' }} kg</strong>
+                </div>
+                <div class="summary-row highlight-green">
+                  <span>Net Weight</span
+                  ><strong class="text-green"
+                    >{{ grn?.netWeight || calculateNetWeight() }} kg</strong
+                  >
+                </div>
+                @for (fv of getFieldValuesByStep(4); track fv.id) {
+                <div class="summary-row" [class.full-width]="isImageField(fv)">
+                  <span>{{ fv.fieldConfig?.fieldLabel || fv.fieldConfigId }}</span>
+                  @if (isImageField(fv)) {
+                  <div class="image-chips">
+                    @for (img of getImageUrls(fv); track img.key) {
+                    <span
+                      class="image-chip"
+                      (click)="openImagePreview(img.url, fv.fieldConfig?.fieldLabel || 'Image')"
+                    >
+                      <i class="pi pi-image"></i> {{ img.key }}
+                    </span>
+                    }
+                  </div>
+                  } @else {
+                  <strong>{{ formatFieldValue(fv) }}</strong>
+                  }
+                </div>
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Approval Section -->
+        <div class="approval-section">
+          <h3 class="section-title"><i class="pi pi-check-square"></i> Supervisor Decision</h3>
+          <div class="form-grid" [formGroup]="form">
+            <div class="form-field">
+              <app-select
+                id="approvalStatus"
+                formControlName="approvalStatus"
+                [options]="[
+                  { label: 'Approve', value: 'approved' },
+                  { label: 'Reject', value: 'rejected' }
+                ]"
+                label="Approval Status"
+                optionLabel="label"
+                optionValue="value"
+                [required]="true"
+              ></app-select>
+            </div>
+            @if (form.value.approvalStatus === 'rejected') {
+            <div class="form-field full-width">
+              <label for="rejectionReason">Rejection Reason <span class="required">*</span></label>
+              <textarea
+                pInputTextarea
+                id="rejectionReason"
+                formControlName="rejectionReason"
+                rows="2"
+                placeholder="Please provide reason for rejection"
+              ></textarea>
+            </div>
+            }
+          </div>
+        </div>
+        }
+
+        <div class="form-actions">
+          <p-button
+            label="Cancel"
+            severity="secondary"
+            [outlined]="true"
+            (click)="goBack()"
+          ></p-button>
+          <p-button
+            type="submit"
+            label="Continue"
+            icon="pi pi-arrow-right"
+            iconPos="right"
+            [loading]="loading"
+            [disabled]="fieldConfigs.length === 0"
+          ></p-button>
+        </div>
+      </form>
+    </div>
+    }
+
+    <!-- Step 6: Gate Pass -->
+    @if (currentStep === 6) {
+    <div class="step-card">
+      <div class="step-header">
+        <div class="step-icon teal">
+          <i class="pi pi-ticket"></i>
+        </div>
+        <div class="step-info">
+          <h2>Gate Pass</h2>
+          <p>Generate exit pass for the vehicle</p>
+        </div>
+      </div>
+
+      @if (grn?.approvalStatus === 'approved') { @if (gatePass) {
+      <div class="gate-pass-generated">
+        <div class="success-banner">
+          <i class="pi pi-check-circle"></i>
+          <span>Gate Pass Generated Successfully</span>
+        </div>
+
+        <div class="gate-pass-card">
+          <div class="qr-section">
+            @if (qrCodeDataUrl) {
+            <img [src]="qrCodeDataUrl" alt="QR Code" class="qr-image" />
+            <span class="qr-hint">Scan to verify</span>
+            }
+          </div>
+          <div class="pass-details">
+            <div class="pass-number">{{ gatePass.passNumber }}</div>
+            <div class="pass-status" [class]="gatePass.status">
+              {{ gatePass.status | uppercase }}
+            </div>
+            <div class="pass-info-grid">
+              <div class="info-item">
+                <span>GRN</span><strong>{{ grn?.grnNumber }}</strong>
+              </div>
+              <div class="info-item">
+                <span>Vendor</span><strong>{{ grn?.vendor?.companyName }}</strong>
+              </div>
+              <div class="info-item">
+                <span>Truck</span><strong>{{ grn?.truckNumber }}</strong>
+              </div>
+              <div class="info-item">
+                <span>Net Weight</span
+                ><strong>{{ grn?.netWeight || calculateNetWeight() }} kg</strong>
+              </div>
+              <div class="info-item full">
+                <span>Expires</span><strong>{{ gatePass.expiresAt | date : 'medium' }}</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="gate-pass-actions">
+          <p-button
+            label="Download PDF"
+            icon="pi pi-download"
+            severity="success"
+            (click)="downloadGatePassPDF()"
+          ></p-button>
+          <p-button
+            label="View All Passes"
+            icon="pi pi-list"
+            [outlined]="true"
+            (click)="router.navigate(['/gate-pass'])"
+          ></p-button>
+          <p-button
+            label="Back to List"
+            severity="secondary"
+            [text]="true"
+            (click)="goBack()"
+          ></p-button>
+        </div>
+      </div>
+      } @else {
+      <div class="generate-pass-section">
+        <div class="info-banner">
+          <i class="pi pi-info-circle"></i>
+          <div>
+            <h4>Ready to Generate Gate Pass</h4>
+            <p>GRN has been approved. Generate a gate pass for the vehicle to exit.</p>
+          </div>
+        </div>
+        <div class="form-actions center">
+          <p-button
+            label="Generate Gate Pass"
+            icon="pi pi-plus"
+            size="large"
+            (click)="generateGatePass()"
+            [loading]="loading"
+          ></p-button>
+        </div>
+      </div>
+      } } @else {
+      <div class="pending-approval">
+        <i class="pi pi-clock"></i>
+        <h4>Approval Pending</h4>
+        <p>Complete supervisor review in Step 5 before generating gate pass.</p>
+        <p-button
+          label="Back to List"
+          severity="secondary"
+          [outlined]="true"
+          (click)="goBack()"
+        ></p-button>
+      </div>
+      }
+    </div>
+    }
+
+    <!-- Step 7: Inspection Report -->
+    @if (currentStep === 7) {
+    <div class="step-card">
+      <div class="step-header">
+        <div class="step-icon indigo">
+          <i class="pi pi-file-check"></i>
+        </div>
+        <div class="step-info">
+          <h2>Inspection Report</h2>
+          <p>View quality inspection results</p>
+        </div>
+      </div>
+
+      <div class="completion-section">
+        <div class="completion-icon">
+          <i class="pi pi-check-circle"></i>
+        </div>
+        <h3>GRN Process Complete</h3>
+        <p>The GRN workflow has been completed. View the inspection report after QC inspection.</p>
+        <div class="form-actions center">
+          <p-button
+            label="View QC Inspections"
+            icon="pi pi-search"
+            (click)="router.navigate(['/qc'])"
+          ></p-button>
+          <p-button
+            label="Back to GRN List"
+            severity="secondary"
+            [outlined]="true"
+            (click)="goBack()"
+          ></p-button>
+        </div>
+      </div>
+    </div>
+    }
+  </div>
+
+  <!-- Image Preview Dialog -->
+  <p-dialog
+    [(visible)]="showImagePreview"
+    [header]="previewImageTitle"
+    [modal]="true"
+    [dismissableMask]="true"
+    [style]="{ width: '90vw', maxWidth: '800px' }"
+    [contentStyle]="{ padding: '0' }"
+  >
+    <div class="image-preview-container">
+      <img
+        [src]="previewImageUrl"
+        [alt]="previewImageTitle"
+        class="preview-image"
+        (error)="onImageError($event)"
+      />
+    </div>
+    <div class="image-preview-footer">
+      <span>{{ previewImageTitle }}</span>
+      <a [href]="previewImageUrl" target="_blank"><i class="pi pi-external-link"></i> Open</a>
+    </div>
+  </p-dialog>
+</div>

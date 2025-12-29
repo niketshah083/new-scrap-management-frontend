@@ -1,0 +1,41 @@
+export enum ModuleCode {
+  DASHBOARD = 'DASHBOARD',
+  VENDORS = 'VENDORS',
+  MATERIALS = 'MATERIALS',
+  PURCHASE_ORDERS = 'PURCHASE_ORDERS',
+  GRN = 'GRN',
+  GRN_FIELD_CONFIG = 'GRNFieldConfig',
+  QC = 'QC',
+  GATE_PASS = 'GATE_PASS',
+  REPORTS = 'REPORTS',
+  USERS = 'USERS',
+  ROLES = 'ROLES',
+  SETTINGS = 'SETTINGS',
+  TENANTS = 'TENANTS',
+  PLANS = 'PLANS',
+  SUBSCRIPTIONS = 'SUBSCRIPTIONS',
+}
+
+export const ModuleDefinitions: Record<ModuleCode, { name: string; description: string }> = {
+  [ModuleCode.DASHBOARD]: { name: 'Dashboard', description: 'Dashboard and analytics' },
+  [ModuleCode.VENDORS]: { name: 'Vendors', description: 'Vendor management' },
+  [ModuleCode.MATERIALS]: { name: 'Materials', description: 'Material management' },
+  [ModuleCode.PURCHASE_ORDERS]: {
+    name: 'Purchase Orders',
+    description: 'Purchase order management',
+  },
+  [ModuleCode.GRN]: { name: 'GRN', description: 'Goods Receipt Note management' },
+  [ModuleCode.GRN_FIELD_CONFIG]: {
+    name: 'GRN Field Config',
+    description: 'GRN field configuration management',
+  },
+  [ModuleCode.QC]: { name: 'Quality Control', description: 'Quality control management' },
+  [ModuleCode.GATE_PASS]: { name: 'Gate Pass', description: 'Gate pass management' },
+  [ModuleCode.REPORTS]: { name: 'Reports', description: 'Reports and analytics' },
+  [ModuleCode.USERS]: { name: 'Users', description: 'User management' },
+  [ModuleCode.ROLES]: { name: 'Roles', description: 'Role management' },
+  [ModuleCode.SETTINGS]: { name: 'Settings', description: 'System settings' },
+  [ModuleCode.TENANTS]: { name: 'Tenants', description: 'Tenant management' },
+  [ModuleCode.PLANS]: { name: 'Plans', description: 'Plan management' },
+  [ModuleCode.SUBSCRIPTIONS]: { name: 'Subscriptions', description: 'Subscription management' },
+};

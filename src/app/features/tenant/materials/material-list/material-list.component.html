@@ -1,0 +1,145 @@
+<div class="list-page">
+  <div class="page-header">
+    <h1><i class="pi pi-th-large"></i> Materials</h1>
+    <div class="header-actions">
+      <p-button label="Add Material" icon="pi pi-plus" (click)="openForm()"></p-button>
+    </div>
+  </div>
+
+  <div class="table-card">
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+      <div class="search-input">
+        <i class="pi pi-search"></i>
+        <input
+          type="text"
+          placeholder="Search materials..."
+          [(ngModel)]="searchTerm"
+          (input)="onSearch()"
+        />
+      </div>
+      <div class="filter-select">
+        <p-select
+          [options]="statusOptions"
+          [(ngModel)]="selectedStatus"
+          (onChange)="onFilter()"
+          placeholder="All Status"
+          [showClear]="true"
+          appendTo="body"
+        ></p-select>
+      </div>
+    </div>
+
+    <!-- Stats Row -->
+    <div class="stats-row">
+      <div class="stat-item">
+        <div class="stat-icon blue"><i class="pi pi-th-large"></i></div>
+        <div class="stat-info">
+          <div class="stat-value">{{ totalCount }}</div>
+          <div class="stat-label">Total Materials</div>
+        </div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-icon green"><i class="pi pi-check-circle"></i></div>
+        <div class="stat-info">
+          <div class="stat-value">{{ activeCount }}</div>
+          <div class="stat-label">Active</div>
+        </div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-icon orange"><i class="pi pi-ban"></i></div>
+        <div class="stat-info">
+          <div class="stat-value">{{ inactiveCount }}</div>
+          <div class="stat-label">Inactive</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <p-table
+      [value]="filteredMaterials"
+      [loading]="loading"
+      [paginator]="true"
+      [rows]="10"
+      [rowsPerPageOptions]="[10, 25, 50]"
+      [showCurrentPageReport]="true"
+      currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Name</th>
+          <th>Code</th>
+          <th class="hide-mobile">Unit of Measure</th>
+          <th class="hide-mobile">Category</th>
+          <th>Status</th>
+          <th style="width: 120px">Actions</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-material>
+        <tr>
+          <td>
+            <span class="cell-primary">{{ material.name }}</span>
+          </td>
+          <td>
+            <span class="cell-link">{{ material.code }}</span>
+          </td>
+          <td class="hide-mobile">{{ material.unitOfMeasure }}</td>
+          <td class="hide-mobile">
+            <span class="cell-muted">{{ material.category || '-' }}</span>
+          </td>
+          <td>
+            <p-tag
+              [value]="material.isActive ? 'Active' : 'Inactive'"
+              [severity]="material.isActive ? 'success' : 'danger'"
+            ></p-tag>
+          </td>
+          <td>
+            <div class="action-buttons">
+              <p-button
+                icon="pi pi-pencil"
+                [rounded]="true"
+                [text]="true"
+                severity="info"
+                pTooltip="Edit"
+                (click)="openForm(material)"
+              ></p-button>
+              <p-button
+                icon="pi pi-trash"
+                [rounded]="true"
+                [text]="true"
+                severity="danger"
+                pTooltip="Delete"
+                (click)="confirmDelete(material)"
+              ></p-button>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="6">
+            <div class="empty-state">
+              <i class="pi pi-th-large"></i>
+              <h4>No Materials Found</h4>
+              <p>Add your first material to get started</p>
+              <p-button label="Add Material" icon="pi pi-plus" (click)="openForm()"></p-button>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+</div>
+
+<p-dialog
+  [(visible)]="formVisible"
+  [header]="editingMaterial ? 'Edit Material' : 'Add Material'"
+  [modal]="true"
+  [style]="{ width: '450px' }"
+>
+  <app-material-form
+    [material]="editingMaterial"
+    (save)="onSave($event)"
+    (cancel)="closeForm()"
+  ></app-material-form>
+</p-dialog>

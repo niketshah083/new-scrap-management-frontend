@@ -1,0 +1,188 @@
+<div class="list-page">
+  <div class="page-header">
+    <h1><i class="pi pi-building"></i> Tenants</h1>
+    <div class="header-actions">
+      <p-button label="Add Tenant" icon="pi pi-plus" (click)="openForm()"></p-button>
+    </div>
+  </div>
+
+  <div class="table-card">
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+      <div class="search-input">
+        <i class="pi pi-search"></i>
+        <input
+          type="text"
+          placeholder="Search by company, email, phone..."
+          [(ngModel)]="searchTerm"
+          (input)="onSearch()"
+        />
+      </div>
+      <div class="filter-select">
+        <p-select
+          [options]="statusOptions"
+          [(ngModel)]="selectedStatus"
+          (onChange)="onFilter()"
+          placeholder="All Status"
+          [showClear]="true"
+          appendTo="body"
+        ></p-select>
+      </div>
+    </div>
+
+    <!-- Stats Row -->
+    <div class="stats-row">
+      <div class="stat-item">
+        <div class="stat-icon blue"><i class="pi pi-building"></i></div>
+        <div class="stat-info">
+          <div class="stat-value">{{ totalCount }}</div>
+          <div class="stat-label">Total Tenants</div>
+        </div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-icon green"><i class="pi pi-check-circle"></i></div>
+        <div class="stat-info">
+          <div class="stat-value">{{ activeCount }}</div>
+          <div class="stat-label">Active</div>
+        </div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-icon purple"><i class="pi pi-credit-card"></i></div>
+        <div class="stat-info">
+          <div class="stat-value">{{ withSubscriptionCount }}</div>
+          <div class="stat-label">With Subscription</div>
+        </div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-icon red"><i class="pi pi-times-circle"></i></div>
+        <div class="stat-info">
+          <div class="stat-value">{{ inactiveCount }}</div>
+          <div class="stat-label">Inactive</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <p-table
+      [value]="filteredTenants"
+      [loading]="loading"
+      [paginator]="true"
+      [rows]="10"
+      [rowsPerPageOptions]="[10, 25, 50]"
+      [showCurrentPageReport]="true"
+      currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Company Name</th>
+          <th class="hide-mobile">Email</th>
+          <th class="hide-mobile">Phone</th>
+          <th>Subscription</th>
+          <th>Status</th>
+          <th style="width: 150px">Actions</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-tenant>
+        <tr>
+          <td>
+            <span class="cell-primary">{{ tenant.companyName }}</span>
+          </td>
+          <td class="hide-mobile">
+            <span class="cell-link">{{ tenant.email }}</span>
+          </td>
+          <td class="hide-mobile">
+            <span class="cell-muted">{{ tenant.phone || '-' }}</span>
+          </td>
+          <td>
+            @if (tenant.subscription) {
+            <span
+              class="subscription-badge"
+              [class.active]="tenant.subscription.status === 'active'"
+            >
+              {{ tenant.subscription.planName }}
+            </span>
+            } @else {
+            <span class="no-subscription">No subscription</span>
+            }
+          </td>
+          <td>
+            <p-tag
+              [value]="tenant.isActive ? 'Active' : 'Inactive'"
+              [severity]="tenant.isActive ? 'success' : 'danger'"
+            ></p-tag>
+          </td>
+          <td>
+            <div class="action-buttons">
+              <p-button
+                icon="pi pi-pencil"
+                [rounded]="true"
+                [text]="true"
+                severity="info"
+                pTooltip="Edit"
+                (click)="openForm(tenant)"
+              ></p-button>
+              <p-button
+                icon="pi pi-credit-card"
+                [rounded]="true"
+                [text]="true"
+                severity="warn"
+                pTooltip="Assign Subscription"
+                (click)="openSubscriptionDialog(tenant)"
+              ></p-button>
+              <p-button
+                icon="pi pi-trash"
+                [rounded]="true"
+                [text]="true"
+                severity="danger"
+                pTooltip="Delete"
+                (click)="confirmDelete(tenant)"
+              ></p-button>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="6">
+            <div class="empty-state">
+              <i class="pi pi-building"></i>
+              <h4>No Tenants Found</h4>
+              <p>Add your first tenant to get started</p>
+              <p-button label="Add Tenant" icon="pi pi-plus" (click)="openForm()"></p-button>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+</div>
+
+<p-dialog
+  [(visible)]="formVisible"
+  [header]="editingTenant ? 'Edit Tenant' : 'Add Tenant'"
+  [modal]="true"
+  [style]="{ width: '500px' }"
+  [breakpoints]="{ '768px': '95vw' }"
+  [closable]="true"
+>
+  <app-tenant-form
+    [tenant]="editingTenant"
+    (save)="onSave($event)"
+    (cancel)="closeForm()"
+  ></app-tenant-form>
+</p-dialog>
+
+<p-dialog
+  [(visible)]="subscriptionDialogVisible"
+  header="Assign Subscription"
+  [modal]="true"
+  [style]="{ width: '450px' }"
+  [breakpoints]="{ '768px': '95vw' }"
+  [closable]="true"
+>
+  <app-subscription-form
+    [tenant]="selectedTenant"
+    (save)="onSubscriptionSave($event)"
+    (cancel)="closeSubscriptionDialog()"
+  ></app-subscription-form>
+</p-dialog>

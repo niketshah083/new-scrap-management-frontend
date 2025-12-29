@@ -1,0 +1,32 @@
+<header class="header" [class.sidebar-collapsed]="sidebarCollapsed">
+  <div class="header-left">
+    <button class="menu-toggle" (click)="onToggleSidebar()">
+      <i class="pi pi-bars"></i>
+    </button>
+  </div>
+
+  <div class="header-right">
+    <button class="notification-btn" (click)="onOpenNotifications()">
+      <i class="pi pi-bell"></i>
+      @if (unreadCount > 0) {
+      <span class="badge">{{ unreadCount }}</span>
+      }
+    </button>
+
+    <div class="user-menu">
+      <button class="user-btn" (click)="toggleUserMenu($event)">
+        <div class="user-avatar">
+          {{ currentUser?.name?.charAt(0) || 'U' }}
+        </div>
+        @if (currentUser) {
+        <div class="user-info">
+          <span class="user-name">{{ currentUser.name }}</span>
+          <span class="user-email">{{ currentUser.email }}</span>
+        </div>
+        }
+        <i class="pi pi-angle-down"></i>
+      </button>
+      <p-menu #menu [model]="userMenuItems" [popup]="true" appendTo="body"></p-menu>
+    </div>
+  </div>
+</header>

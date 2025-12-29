@@ -1,0 +1,37 @@
+<div class="field">
+  <label [for]="id" class="block text-sm font-medium text-gray-700 mb-1">
+    {{ config.label }}
+    @if (config.required) {
+    <span class="text-red-500">*</span>
+    }
+  </label>
+
+  @if (config.type === 'password') {
+  <p-password
+    [id]="id"
+    [(ngModel)]="value"
+    [placeholder]="config.placeholder || ''"
+    [disabled]="disabled || config.disabled || false"
+    [feedback]="false"
+    [toggleMask]="true"
+    (ngModelChange)="onChange($event)"
+    (blur)="onTouched()"
+    styleClass="w-full"
+    inputStyleClass="w-full"
+  />
+  } @else {
+  <input
+    pInputText
+    [id]="id"
+    [type]="config.type || 'text'"
+    [value]="value"
+    [placeholder]="config.placeholder || ''"
+    [disabled]="disabled || config.disabled || false"
+    (input)="onInputChange($event)"
+    (blur)="onBlur()"
+    class="w-full"
+  />
+  } @if (config.errorMessage) {
+  <small class="text-red-500 text-xs mt-1 block">{{ config.errorMessage }}</small>
+  }
+</div>

@@ -1,0 +1,111 @@
+<form [formGroup]="form" (ngSubmit)="onSubmit()">
+  <div class="form-grid">
+    <h3 class="section-title full-width">Company Information</h3>
+
+    <div class="form-field">
+      <label for="companyName">Company Name *</label>
+      <input
+        pInputText
+        id="companyName"
+        formControlName="companyName"
+        placeholder="Enter company name"
+      />
+      @if (form.get('companyName')?.invalid && form.get('companyName')?.touched) {
+      <small class="error-text">Company name is required</small>
+      }
+    </div>
+
+    <div class="form-field">
+      <label for="email">Company Email *</label>
+      <input
+        pInputText
+        id="email"
+        type="email"
+        formControlName="email"
+        placeholder="Enter company email"
+      />
+      @if (form.get('email')?.invalid && form.get('email')?.touched) {
+      <small class="error-text">
+        @if (form.get('email')?.errors?.['required']) { Email is required } @else if
+        (form.get('email')?.errors?.['email']) { Please enter a valid email }
+      </small>
+      }
+    </div>
+
+    <div class="form-field">
+      <label for="phone">Phone *</label>
+      <input pInputText id="phone" formControlName="phone" placeholder="Enter phone number" />
+      @if (form.get('phone')?.invalid && form.get('phone')?.touched) {
+      <small class="error-text">Phone is required</small>
+      }
+    </div>
+
+    <div class="form-field full-width">
+      <label for="address">Address</label>
+      <textarea
+        pTextarea
+        id="address"
+        formControlName="address"
+        placeholder="Enter address"
+        rows="3"
+      ></textarea>
+    </div>
+
+    @if (!tenant) {
+    <h3 class="section-title full-width">Admin User</h3>
+
+    <div class="form-field">
+      <label for="adminName">Admin Name *</label>
+      <input pInputText id="adminName" formControlName="adminName" placeholder="Enter admin name" />
+      @if (form.get('adminName')?.invalid && form.get('adminName')?.touched) {
+      <small class="error-text">Admin name is required</small>
+      }
+    </div>
+
+    <div class="form-field">
+      <label for="adminEmail">Admin Email *</label>
+      <input
+        pInputText
+        id="adminEmail"
+        type="email"
+        formControlName="adminEmail"
+        placeholder="Enter admin email"
+      />
+      @if (form.get('adminEmail')?.invalid && form.get('adminEmail')?.touched) {
+      <small class="error-text">
+        @if (form.get('adminEmail')?.errors?.['required']) { Admin email is required } @else if
+        (form.get('adminEmail')?.errors?.['email']) { Please enter a valid email }
+      </small>
+      }
+    </div>
+
+    <div class="form-field full-width">
+      <label for="adminPassword">Admin Password *</label>
+      <p-password
+        id="adminPassword"
+        formControlName="adminPassword"
+        placeholder="Enter admin password"
+        [toggleMask]="true"
+        [feedback]="true"
+        styleClass="w-full"
+      ></p-password>
+      @if (form.get('adminPassword')?.invalid && form.get('adminPassword')?.touched) {
+      <small class="error-text">
+        @if (form.get('adminPassword')?.errors?.['required']) { Password is required } @else if
+        (form.get('adminPassword')?.errors?.['minlength']) { Password must be at least 8 characters
+        }
+      </small>
+      }
+    </div>
+    }
+  </div>
+
+  <div class="form-actions">
+    <p-button label="Cancel" severity="secondary" [text]="true" (click)="onCancel()"></p-button>
+    <p-button
+      type="submit"
+      [label]="tenant ? 'Update' : 'Create'"
+      [disabled]="form.invalid"
+    ></p-button>
+  </div>
+</form>
