@@ -334,11 +334,12 @@
         </div>
 
         <!-- Net weight calculation for step 4 -->
-        @if (currentStep === 4 && grn && grn.grossWeight && dynamicForm.value.tare_weight) {
+        @if (currentStep === 4 && grn && getGrnFieldValue('gross_weight') &&
+        dynamicForm.value.tare_weight) {
         <div class="weight-calculation">
           <div class="weight-item">
             <span class="weight-label">Gross Weight</span>
-            <span class="weight-value">{{ grn.grossWeight }} kg</span>
+            <span class="weight-value">{{ getGrnFieldValue('gross_weight') }} kg</span>
           </div>
           <div class="weight-operator">−</div>
           <div class="weight-item">
@@ -349,7 +350,10 @@
           <div class="weight-item result">
             <span class="weight-label">Net Weight</span>
             <span class="weight-value"
-              >{{ (grn.grossWeight || 0) - (dynamicForm.value.tare_weight || 0) }} kg</span
+              >{{
+                (+getGrnFieldValue('gross_weight')! || 0) - (dynamicForm.value.tare_weight || 0)
+              }}
+              kg</span
             >
           </div>
         </div>
@@ -411,12 +415,12 @@
                 <span>Initial Weighing</span>
               </div>
               <div class="summary-card-body">
-                <div class="summary-row highlight">
-                  <span>Gross Weight</span
-                  ><strong class="text-blue">{{ grn?.grossWeight || '-' }} kg</strong>
-                </div>
                 @for (fv of getFieldValuesByStep(2); track fv.id) {
-                <div class="summary-row" [class.full-width]="isImageField(fv)">
+                <div
+                  class="summary-row"
+                  [class.highlight]="fv.fieldConfig?.fieldName === 'gross_weight'"
+                  [class.full-width]="isImageField(fv)"
+                >
                   <span>{{ fv.fieldConfig?.fieldLabel || fv.fieldConfigId }}</span>
                   @if (isImageField(fv)) {
                   <div class="image-chips">
@@ -430,7 +434,15 @@
                     }
                   </div>
                   } @else {
-                  <strong>{{ formatFieldValue(fv) }}</strong>
+                  <strong [class.text-blue]="fv.fieldConfig?.fieldName === 'gross_weight'"
+                    >{{ formatFieldValue(fv)
+                    }}{{
+                      fv.fieldConfig?.fieldType === 'number' &&
+                      fv.fieldConfig?.fieldName?.includes('weight')
+                        ? ' kg'
+                        : ''
+                    }}</strong
+                  >
                   }
                 </div>
                 }
@@ -475,18 +487,12 @@
                 <span>Final Weighing</span>
               </div>
               <div class="summary-card-body">
-                <div class="summary-row">
-                  <span>Tare Weight</span
-                  ><strong class="text-blue">{{ grn?.tareWeight || '-' }} kg</strong>
-                </div>
-                <div class="summary-row highlight-green">
-                  <span>Net Weight</span
-                  ><strong class="text-green"
-                    >{{ grn?.netWeight || calculateNetWeight() }} kg</strong
-                  >
-                </div>
                 @for (fv of getFieldValuesByStep(4); track fv.id) {
-                <div class="summary-row" [class.full-width]="isImageField(fv)">
+                <div
+                  class="summary-row"
+                  [class.highlight]="fv.fieldConfig?.fieldName === 'tare_weight'"
+                  [class.full-width]="isImageField(fv)"
+                >
                   <span>{{ fv.fieldConfig?.fieldLabel || fv.fieldConfigId }}</span>
                   @if (isImageField(fv)) {
                   <div class="image-chips">
@@ -500,9 +506,26 @@
                     }
                   </div>
                   } @else {
-                  <strong>{{ formatFieldValue(fv) }}</strong>
+                  <strong [class.text-blue]="fv.fieldConfig?.fieldName === 'tare_weight'"
+                    >{{ formatFieldValue(fv)
+                    }}{{
+                      fv.fieldConfig?.fieldType === 'number' &&
+                      fv.fieldConfig?.fieldName?.includes('weight')
+                        ? ' kg'
+                        : ''
+                    }}</strong
+                  >
                   }
                 </div>
+                }
+                <!-- Net Weight (static field, auto-calculated) -->
+                @if (grn?.netWeight) {
+                <div class="summary-row highlight-green">
+                  <span>Net Weight</span>
+                  <strong class="text-green">{{ grn?.netWeight }} kg</strong>
+                </div>
+                } @if (getFieldValuesByStep(4).length === 0 && !grn?.netWeight) {
+                <div class="no-data">No data recorded</div>
                 }
               </div>
             </div>

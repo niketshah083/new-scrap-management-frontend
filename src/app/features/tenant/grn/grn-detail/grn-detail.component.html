@@ -45,51 +45,79 @@
       </div>
     </p-card>
 
-    <p-card header="Step 1: Gate Entry" styleClass="mt-4">
+    <p-card header="Step 1: Gate Entry" class="mt-4">
       <div class="info-grid">
         <div class="info-item">
           <label>Truck Number</label><span>{{ grn.truckNumber }}</span>
         </div>
+        <!-- Dynamic field values from step 1 -->
+        @for (fieldValue of getFieldValuesByStep(1); track fieldValue.id) {
         <div class="info-item">
-          <label>Driver Name</label><span>{{ grn.driverName }}</span>
-        </div>
-        <div class="info-item">
-          <label>Driver Mobile</label><span>{{ grn.driverMobile }}</span>
-        </div>
-        @if (grn.driverLicence) {
-        <div class="info-item">
-          <label>Driver Licence</label><span>{{ grn.driverLicence }}</span>
+          <label>{{ fieldValue.fieldConfig?.fieldLabel }}</label>
+          <span>{{ fieldValue.textValue || fieldValue.numberValue || '-' }}</span>
         </div>
         }
       </div>
     </p-card>
 
-    @if (grn.grossWeight) {
-    <p-card header="Step 2: Initial Weighing" styleClass="mt-4">
+    @if (getFieldValuesByStep(2).length > 0) {
+    <p-card header="Step 2: Initial Weighing" class="mt-4">
       <div class="info-grid">
+        @for (fieldValue of getFieldValuesByStep(2); track fieldValue.id) {
         <div class="info-item">
-          <label>Gross Weight</label><span>{{ grn.grossWeight }} kg</span>
+          <label>{{ fieldValue.fieldConfig?.fieldLabel }}</label>
+          <span
+            >{{ fieldValue.numberValue || fieldValue.textValue || '-'
+            }}{{ fieldValue.fieldConfig?.fieldName?.includes('weight') ? ' kg' : '' }}</span
+          >
         </div>
+        }
       </div>
     </p-card>
-    } @if (grn.tareWeight) {
-    <p-card header="Step 4: Final Weighing" styleClass="mt-4">
+    } @if (getFieldValuesByStep(3).length > 0) {
+    <p-card header="Step 3: Unloading" class="mt-4">
       <div class="info-grid">
+        @for (fieldValue of getFieldValuesByStep(3); track fieldValue.id) {
         <div class="info-item">
-          <label>Tare Weight</label><span>{{ grn.tareWeight }} kg</span>
+          <label>{{ fieldValue.fieldConfig?.fieldLabel }}</label>
+          <span>{{ fieldValue.textValue || fieldValue.numberValue || '-' }}</span>
         </div>
-        <div class="info-item">
-          <label>Net Weight</label><span>{{ grn.netWeight }} kg</span>
-        </div>
+        }
       </div>
     </p-card>
-    } @if (grn.approvalStatus !== 'pending') {
-    <p-card header="Step 5: Supervisor Review" styleClass="mt-4">
+    } @if (getFieldValuesByStep(4).length > 0 || grn.netWeight) {
+    <p-card header="Step 4: Final Weighing" class="mt-4">
       <div class="info-grid">
+        @for (fieldValue of getFieldValuesByStep(4); track fieldValue.id) {
+        <div class="info-item">
+          <label>{{ fieldValue.fieldConfig?.fieldLabel }}</label>
+          <span
+            >{{ fieldValue.numberValue || fieldValue.textValue || '-'
+            }}{{ fieldValue.fieldConfig?.fieldName?.includes('weight') ? ' kg' : '' }}</span
+          >
+        </div>
+        } @if (grn.netWeight) {
+        <div class="info-item">
+          <label>Net Weight</label>
+          <span style="color: #10b981; font-weight: bold">{{ grn.netWeight }} kg</span>
+        </div>
+        }
+      </div>
+    </p-card>
+    } @if (grn.approvalStatus) {
+    <p-card header="Step 5: Supervisor Review" class="mt-4">
+      <div class="info-grid">
+        <div class="info-item">
+          <label>Verification Status</label>
+          <p-tag
+            [value]="(grn.verificationStatus | titlecase) || ''"
+            [severity]="grn.verificationStatus === 'verified' ? 'success' : 'warn'"
+          ></p-tag>
+        </div>
         <div class="info-item">
           <label>Decision</label>
           <p-tag
-            [value]="grn.approvalStatus | titlecase"
+            [value]="(grn.approvalStatus | titlecase) || ''"
             [severity]="grn.approvalStatus === 'approved' ? 'success' : 'danger'"
           ></p-tag>
         </div>
@@ -100,10 +128,6 @@
         } @if (grn.rejectionReason) {
         <div class="info-item full-width">
           <label>Rejection Reason</label><span>{{ grn.rejectionReason }}</span>
-        </div>
-        } @if (grn.reviewRemarks) {
-        <div class="info-item full-width">
-          <label>Review Remarks</label><span>{{ grn.reviewRemarks }}</span>
         </div>
         }
       </div>

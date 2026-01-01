@@ -1,4 +1,11 @@
-export type POStatus = 'draft' | 'confirmed' | 'partial' | 'completed' | 'cancelled';
+export type POStatus =
+  | 'draft'
+  | 'pending_approval'
+  | 'approved'
+  | 'rejected'
+  | 'partial'
+  | 'completed'
+  | 'cancelled';
 
 export interface PurchaseOrder {
   id: number;
@@ -13,6 +20,11 @@ export interface PurchaseOrder {
   tenantId: number;
   createdAt: Date;
   updatedAt: Date;
+  // Approval fields
+  approvedBy?: number;
+  approver?: { id: number; name: string };
+  approvedAt?: Date;
+  rejectionReason?: string;
 }
 
 export interface PurchaseOrderItem {

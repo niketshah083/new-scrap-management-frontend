@@ -19,6 +19,8 @@ export interface SelectConfig {
   showClear?: boolean;
   optionLabel?: string;
   optionValue?: string;
+  virtualScroll?: boolean;
+  virtualScrollItemSize?: number;
 }
 
 @Component({
@@ -46,6 +48,8 @@ export class SelectComponent implements ControlValueAccessor {
   @Input() showClear: boolean = false;
   @Input() filter: boolean = false;
   @Input() required: boolean = false;
+  @Input() virtualScroll: boolean = false;
+  @Input() virtualScrollItemSize: number = 38;
 
   value: any = null;
   disabled: boolean = false;
@@ -80,6 +84,14 @@ export class SelectComponent implements ControlValueAccessor {
 
   get effectiveRequired(): boolean {
     return this.required || this.config.required || false;
+  }
+
+  get effectiveVirtualScroll(): boolean {
+    return this.virtualScroll || this.config.virtualScroll || false;
+  }
+
+  get effectiveVirtualScrollItemSize(): number {
+    return this.config.virtualScrollItemSize || this.virtualScrollItemSize || 38;
   }
 
   writeValue(value: any): void {

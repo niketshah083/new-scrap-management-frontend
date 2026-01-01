@@ -136,28 +136,35 @@ export class GrnWizardComponent implements OnInit, OnDestroy {
       purchaseOrderId: [null],
       vendorId: [null],
       truckNumber: ['', Validators.required],
-      // Fields used in other steps
-      grossWeight: [null],
-      grossWeightImage: [''],
-      tareWeight: [null],
-      tareWeightImage: [''],
-      driverPhoto: [''],
-      driverLicenceImage: [''],
-      unloadingPhotos: [[]],
-      unloadingNotes: [''],
-      materialCount: [null],
+      // Static fields for Step 5
       verificationStatus: ['verified'],
       approvalStatus: ['approved'],
       rejectionReason: [''],
-      reviewNotes: [''],
+    });
+
+    // Listen for PO changes to auto-select vendor
+    this.form.get('purchaseOrderId')?.valueChanges.subscribe((poId) => {
+      this.onPOChange(poId);
     });
   }
 
+  /**
+   * Auto-select vendor when PO is selected
+   */
+  private onPOChange(poId: number | null): void {
+    if (!poId) return;
+
+    const selectedPO = this.purchaseOrders.find((po) => po.id === poId);
+    if (selectedPO?.vendorId) {
+      this.form.patchValue({ vendorId: selectedPO.vendorId });
+    }
+  }
+
   private loadPurchaseOrders(): void {
-    this.poService.getAll().subscribe({
+    this.poService.getApproved().subscribe({
       next: (res) => {
         if (res.success && res.data) {
-          this.purchaseOrders = res.data.filter((po) => po.status === 'confirmed');
+          this.purchaseOrders = res.data;
         }
       },
     });
@@ -270,9 +277,9 @@ export class GrnWizardComponent implements OnInit, OnDestroy {
       purchaseOrderId: this.grn.purchaseOrderId,
       vendorId: this.grn.vendorId,
       truckNumber: this.grn.truckNumber,
-      grossWeight: this.grn.grossWeight,
-      tareWeight: this.grn.tareWeight,
-      unloadingNotes: (this.grn as any).unloadingNotes,
+      verificationStatus: this.grn.verificationStatus || 'verified',
+      approvalStatus: this.grn.approvalStatus || 'approved',
+      rejectionReason: this.grn.rejectionReason || '',
     });
   }
 
@@ -339,7 +346,7 @@ export class GrnWizardComponent implements OnInit, OnDestroy {
     if (!this.grnId) return;
 
     // Collect dynamic field values
-    const fieldValues: { fieldConfigId: number; value: string }[] = [];
+    const fieldValues: { fieldConfigId: number; fieldName: string; value: string }[] = [];
     for (const field of this.fieldConfigs) {
       let value = this.dynamicForm.get(field.fieldName)?.value;
       if (value !== null && value !== undefined && value !== '') {
@@ -349,54 +356,29 @@ export class GrnWizardComponent implements OnInit, OnDestroy {
         }
         fieldValues.push({
           fieldConfigId: field.id,
+          fieldName: field.fieldName,
           value: String(value),
         });
       }
     }
 
-    // Helper to convert array to string for legacy fields
-    const toStringValue = (val: any): string | undefined => {
-      if (!val) return undefined;
-      if (Array.isArray(val)) return val.join(',');
-      return String(val);
-    };
-
     let obs;
     switch (this.currentStep) {
       case 2:
-        obs = this.grnService.updateStep2(this.grnId, {
-          grossWeight: this.dynamicForm.value.gross_weight || this.form.value.grossWeight,
-          grossWeightImage: toStringValue(
-            this.dynamicForm.value.gross_weight_image || this.form.value.grossWeightImage
-          ),
-          fieldValues,
-        });
+        // Step 2: All fields are dynamic (gross_weight, gross_weight_image)
+        obs = this.grnService.updateStep2(this.grnId, { fieldValues });
         break;
       case 3:
-        obs = this.grnService.updateStep3(this.grnId, {
-          driverPhoto: toStringValue(this.form.value.driverPhoto),
-          driverLicenceImage: toStringValue(this.form.value.driverLicenceImage),
-          unloadingPhotos: this.form.value.unloadingPhotos || [],
-          unloadingNotes: toStringValue(
-            this.dynamicForm.value.unloading_notes || this.form.value.unloadingNotes
-          ),
-          fieldValues,
-        });
+        // Step 3: All fields are dynamic (driver_photo, driver_licence_image, unloading_photos, unloading_notes, material_count)
+        obs = this.grnService.updateStep3(this.grnId, { fieldValues });
         break;
       case 4:
-        obs = this.grnService.updateStep4(this.grnId, {
-          tareWeight: this.dynamicForm.value.tare_weight || this.form.value.tareWeight,
-          tareWeightImage: toStringValue(
-            this.dynamicForm.value.tare_weight_image || this.form.value.tareWeightImage
-          ),
-          materialCount: this.form.value.materialCount || undefined,
-          fieldValues,
-        });
+        // Step 4: All fields are dynamic (tare_weight, tare_weight_image, net_weight is auto-calculated)
+        obs = this.grnService.updateStep4(this.grnId, { fieldValues });
         break;
       case 5:
-        // Get verification status and convert to lowercase for backend
-        let verificationStatus =
-          this.dynamicForm.value.verification_status || this.form.value.verificationStatus;
+        // Step 5: Static fields (verificationStatus, approvalStatus, rejectionReason)
+        let verificationStatus = this.form.value.verificationStatus;
         if (verificationStatus) {
           // Convert "Verified" to "verified", "Not Verified" to "not_verified"
           verificationStatus = verificationStatus.toLowerCase().replace(/\s+/g, '_');
@@ -404,11 +386,8 @@ export class GrnWizardComponent implements OnInit, OnDestroy {
         obs = this.grnService.updateStep5(this.grnId, {
           verificationStatus,
           approvalStatus: this.form.value.approvalStatus,
-          rejectionReason: toStringValue(this.form.value.rejectionReason),
-          reviewNotes: toStringValue(
-            this.dynamicForm.value.review_notes || this.form.value.reviewNotes
-          ),
-          fieldValues,
+          rejectionReason: this.form.value.rejectionReason || undefined,
+          fieldValues: fieldValues.length > 0 ? fieldValues : undefined,
         });
         break;
       default:
@@ -584,8 +563,8 @@ export class GrnWizardComponent implements OnInit, OnDestroy {
     addRow('GRN Number', this.grn.grnNumber || '-');
     addRow('Vendor', this.grn.vendor?.companyName || '-');
     addRow('Truck Number', this.grn.truckNumber || '-');
-    addRow('Gross Weight', `${this.grn.grossWeight || 0} kg`);
-    addRow('Tare Weight', `${this.grn.tareWeight || 0} kg`);
+    addRow('Gross Weight', `${this.getGrnFieldValue('gross_weight') || 0} kg`);
+    addRow('Tare Weight', `${this.getGrnFieldValue('tare_weight') || 0} kg`);
     addRow('Net Weight', `${this.grn.netWeight || this.calculateNetWeight()} kg`);
 
     // Footer
@@ -688,10 +667,23 @@ export class GrnWizardComponent implements OnInit, OnDestroy {
     return String(textVal);
   }
 
+  /**
+   * Get field value from GRN's dynamic field values by field name
+   */
+  getGrnFieldValue(fieldName: string): string | number | null {
+    if (!this.grn?.fieldValues) return null;
+    const fv = this.grn.fieldValues.find((v) => v.fieldConfig?.fieldName === fieldName);
+    if (!fv) return null;
+    return fv.numberValue ?? fv.textValue ?? fv.fileUrl ?? null;
+  }
+
   calculateNetWeight(): number {
     if (!this.grn) return 0;
-    const gross = this.grn.grossWeight || 0;
-    const tare = this.grn.tareWeight || 0;
+    // netWeight is now a static field
+    if (this.grn.netWeight) return this.grn.netWeight;
+    // Fallback: calculate from dynamic fields
+    const gross = Number(this.getGrnFieldValue('gross_weight')) || 0;
+    const tare = Number(this.getGrnFieldValue('tare_weight')) || 0;
     return gross - tare;
   }
 

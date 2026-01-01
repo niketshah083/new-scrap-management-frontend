@@ -143,8 +143,8 @@ export class LayoutComponent implements OnInit {
         'User:List',
         'Role:List',
         'GRNFieldConfig:List',
-        'ExternalDbConfig:READ',
-        'ExternalDbConfig:UPDATE',
+        'ExternalDbConfig:Read',
+        'ExternalDbConfig:Update',
       ])
     ) {
       const adminChildren: MenuItem[] = [];
@@ -161,7 +161,7 @@ export class LayoutComponent implements OnInit {
           route: '/grn-config',
         });
       }
-      if (this.authService.hasAnyPermission(['ExternalDbConfig:READ', 'ExternalDbConfig:UPDATE'])) {
+      if (this.authService.hasAnyPermission(['ExternalDbConfig:Read', 'ExternalDbConfig:Update'])) {
         adminChildren.push({
           label: 'External DB',
           icon: 'pi pi-database',

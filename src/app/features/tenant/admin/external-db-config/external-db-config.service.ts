@@ -54,13 +54,36 @@ export class ExternalDbConfigService {
 
   constructor(private http: HttpClient) {}
 
-  getConfig(tenantId: number): Observable<ApiResponse<ExternalDbConfig>> {
+  // Self-service endpoints for tenant users (uses current tenant from auth token)
+  getConfig(_tenantId?: number): Observable<ApiResponse<ExternalDbConfig>> {
+    return this.http.get<ApiResponse<ExternalDbConfig>>(`${this.apiUrl}/my/external-db-config`);
+  }
+
+  updateConfig(
+    _tenantId: number,
+    data: UpdateExternalDbConfigRequest
+  ): Observable<ApiResponse<ExternalDbConfig>> {
+    return this.http.put<ApiResponse<ExternalDbConfig>>(
+      `${this.apiUrl}/my/external-db-config`,
+      data
+    );
+  }
+
+  testConnection(_tenantId?: number): Observable<ApiResponse<ConnectionTestResult>> {
+    return this.http.post<ApiResponse<ConnectionTestResult>>(
+      `${this.apiUrl}/my/external-db-config/test`,
+      {}
+    );
+  }
+
+  // Super Admin endpoints for managing specific tenant's config
+  getConfigByTenantId(tenantId: number): Observable<ApiResponse<ExternalDbConfig>> {
     return this.http.get<ApiResponse<ExternalDbConfig>>(
       `${this.apiUrl}/${tenantId}/external-db-config`
     );
   }
 
-  updateConfig(
+  updateConfigByTenantId(
     tenantId: number,
     data: UpdateExternalDbConfigRequest
   ): Observable<ApiResponse<ExternalDbConfig>> {
@@ -70,7 +93,7 @@ export class ExternalDbConfigService {
     );
   }
 
-  testConnection(tenantId: number): Observable<ApiResponse<ConnectionTestResult>> {
+  testConnectionByTenantId(tenantId: number): Observable<ApiResponse<ConnectionTestResult>> {
     return this.http.post<ApiResponse<ConnectionTestResult>>(
       `${this.apiUrl}/${tenantId}/external-db-config/test`,
       {}

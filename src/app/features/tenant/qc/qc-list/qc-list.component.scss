@@ -87,3 +87,22 @@
   background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
   color: #dc2626;
 }
+
+// Fix action buttons overflow
+.action-buttons {
+  display: flex;
+  gap: 0.25rem;
+  flex-wrap: nowrap;
+  
+  .p-button {
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+}
+
+// Ensure table doesn't cut off content
+.p-datatable {
+  .p-datatable-tbody > tr > td:last-child {
+    overflow: visible;
+  }
+}

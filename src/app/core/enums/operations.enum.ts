@@ -1,13 +1,15 @@
 export enum OperationCode {
-  // Standard CRUD operations
-  CREATE = 'CREATE',
-  READ = 'READ',
-  UPDATE = 'UPDATE',
-  DELETE = 'DELETE',
-  LIST = 'LIST',
-  EXPORT = 'EXPORT',
-  IMPORT = 'IMPORT',
-  APPROVE = 'APPROVE',
+  // Standard CRUD operations - using PascalCase to match backend permission codes
+  Create = 'Create',
+  Read = 'Read',
+  Update = 'Update',
+  Delete = 'Delete',
+  List = 'List',
+  Export = 'Export',
+  Import = 'Import',
+  Approve = 'Approve',
+  Edit = 'Edit',
+  Verify = 'Verify',
 
   // GRN Step-wise operations
   STEP1_GATE_ENTRY = 'STEP1_GATE_ENTRY',
@@ -21,14 +23,16 @@ export enum OperationCode {
 
 export const OperationDefinitions: Record<OperationCode, { name: string }> = {
   // Standard CRUD operations
-  [OperationCode.CREATE]: { name: 'Create' },
-  [OperationCode.READ]: { name: 'Read' },
-  [OperationCode.UPDATE]: { name: 'Update' },
-  [OperationCode.DELETE]: { name: 'Delete' },
-  [OperationCode.LIST]: { name: 'List' },
-  [OperationCode.EXPORT]: { name: 'Export' },
-  [OperationCode.IMPORT]: { name: 'Import' },
-  [OperationCode.APPROVE]: { name: 'Approve' },
+  [OperationCode.Create]: { name: 'Create' },
+  [OperationCode.Read]: { name: 'Read' },
+  [OperationCode.Update]: { name: 'Update' },
+  [OperationCode.Delete]: { name: 'Delete' },
+  [OperationCode.List]: { name: 'List' },
+  [OperationCode.Export]: { name: 'Export' },
+  [OperationCode.Import]: { name: 'Import' },
+  [OperationCode.Approve]: { name: 'Approve' },
+  [OperationCode.Edit]: { name: 'Edit' },
+  [OperationCode.Verify]: { name: 'Verify' },
 
   // GRN Step-wise operations
   [OperationCode.STEP1_GATE_ENTRY]: { name: 'Step 1 - Gate Entry' },
@@ -67,12 +71,14 @@ export const GRN_STEP_OPERATIONS = [
 
 // Standard operations array (non-step operations)
 export const STANDARD_OPERATIONS = [
-  OperationCode.CREATE,
-  OperationCode.READ,
-  OperationCode.UPDATE,
-  OperationCode.DELETE,
-  OperationCode.LIST,
-  OperationCode.EXPORT,
-  OperationCode.IMPORT,
-  OperationCode.APPROVE,
+  OperationCode.Create,
+  OperationCode.Read,
+  OperationCode.Update,
+  OperationCode.Delete,
+  OperationCode.List,
+  OperationCode.Export,
+  OperationCode.Import,
+  OperationCode.Approve,
+  OperationCode.Edit,
+  OperationCode.Verify,
 ];

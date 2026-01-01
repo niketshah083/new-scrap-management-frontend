@@ -103,7 +103,7 @@
                 <th>Vendor</th>
                 <th>Net Weight</th>
                 <th class="hide-mobile">Completed At</th>
-                <th style="width: 140px">Actions</th>
+                <th style="width: 120px; min-width: 120px">Actions</th>
               </tr>
             </ng-template>
             <ng-template pTemplate="body" let-grn>
@@ -131,6 +131,7 @@
                       icon="pi pi-play"
                       size="small"
                       severity="success"
+                      [style]="{ 'white-space': 'nowrap' }"
                       (click)="createQCInspection(grn)"
                     ></p-button>
                   </div>

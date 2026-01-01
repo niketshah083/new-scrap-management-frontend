@@ -5,7 +5,7 @@ import { Card } from 'primeng/card';
 import { Button } from 'primeng/button';
 import { Tag } from 'primeng/tag';
 import { GrnService } from '../grn.service';
-import { GRN } from '../grn.model';
+import { GRN, GRNFieldValue } from '../grn.model';
 import { ToastService } from '../../../../core/services/toast.service';
 
 @Component({
@@ -54,6 +54,11 @@ export class GrnDetailComponent implements OnInit {
 
   goBack(): void {
     this.router.navigate(['/grn']);
+  }
+
+  getFieldValuesByStep(stepNumber: number): GRNFieldValue[] {
+    if (!this.grn?.fieldValues) return [];
+    return this.grn.fieldValues.filter((fv) => fv.fieldConfig?.stepNumber === stepNumber);
   }
 
   getStatusSeverity(status: string): 'success' | 'info' | 'warn' | 'danger' | 'secondary' {

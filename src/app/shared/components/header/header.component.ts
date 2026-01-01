@@ -1,4 +1,12 @@
-import { Component, Input, Output, EventEmitter, OnInit, ViewChild } from '@angular/core';
+import {
+  Component,
+  Input,
+  Output,
+  EventEmitter,
+  OnInit,
+  ViewChild,
+  HostListener,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { Menu, MenuModule } from 'primeng/menu';
@@ -24,7 +32,7 @@ export class HeaderComponent implements OnInit {
   currentUser: User | null = null;
   unreadCount: number = 0;
   userMenuItems: MenuItem[] = [];
-  showUserMenu: boolean = false;
+  menuVisible: boolean = false;
 
   constructor(
     private authService: AuthService,
@@ -50,18 +58,27 @@ export class HeaderComponent implements OnInit {
       {
         label: 'Profile',
         icon: 'pi pi-user',
-        command: () => this.router.navigate(['/profile']),
+        command: () => {
+          this.router.navigate(['/profile']);
+          this.hideMenu();
+        },
       },
       {
         label: 'Change Password',
         icon: 'pi pi-key',
-        command: () => this.router.navigate(['/change-password']),
+        command: () => {
+          this.router.navigate(['/change-password']);
+          this.hideMenu();
+        },
       },
       { separator: true },
       {
         label: 'Logout',
         icon: 'pi pi-sign-out',
-        command: () => this.logout(),
+        command: () => {
+          this.logout();
+          this.hideMenu();
+        },
       },
     ];
   }
@@ -79,7 +96,29 @@ export class HeaderComponent implements OnInit {
   }
 
   toggleUserMenu(event: Event): void {
-    this.menu.toggle(event);
+    event.stopPropagation();
+    if (this.menuVisible) {
+      this.menu.hide();
+      this.menuVisible = false;
+    } else {
+      this.menu.show(event);
+      this.menuVisible = true;
+    }
+  }
+
+  hideMenu(): void {
+    if (this.menu) {
+      this.menu.hide();
+      this.menuVisible = false;
+    }
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: Event): void {
+    // Hide menu when clicking outside
+    if (this.menuVisible) {
+      this.hideMenu();
+    }
   }
 
   logout(): void {

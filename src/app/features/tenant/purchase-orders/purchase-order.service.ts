@@ -25,6 +25,10 @@ export class PurchaseOrderService {
     return this.http.get<ApiResponse<PurchaseOrder[]>>(`${this.apiUrl}/pending`);
   }
 
+  getApproved(): Observable<ApiResponse<PurchaseOrder[]>> {
+    return this.http.get<ApiResponse<PurchaseOrder[]>>(`${this.apiUrl}/approved/list`);
+  }
+
   getById(id: number): Observable<ApiResponse<PurchaseOrder>> {
     return this.http.get<ApiResponse<PurchaseOrder>>(`${this.apiUrl}/${id}`);
   }
@@ -43,5 +47,22 @@ export class PurchaseOrderService {
 
   updateStatus(id: number, status: string): Observable<ApiResponse<PurchaseOrder>> {
     return this.http.patch<ApiResponse<PurchaseOrder>>(`${this.apiUrl}/${id}/status/${status}`, {});
+  }
+
+  submitForApproval(id: number): Observable<ApiResponse<PurchaseOrder>> {
+    return this.http.patch<ApiResponse<PurchaseOrder>>(
+      `${this.apiUrl}/${id}/submit-for-approval`,
+      {}
+    );
+  }
+
+  approve(id: number): Observable<ApiResponse<PurchaseOrder>> {
+    return this.http.patch<ApiResponse<PurchaseOrder>>(`${this.apiUrl}/${id}/approve`, {});
+  }
+
+  reject(id: number, rejectionReason: string): Observable<ApiResponse<PurchaseOrder>> {
+    return this.http.patch<ApiResponse<PurchaseOrder>>(`${this.apiUrl}/${id}/reject`, {
+      rejectionReason,
+    });
   }
 }

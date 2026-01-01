@@ -85,8 +85,6 @@ export class DashboardComponent implements OnInit {
         return 'info';
       case 'rejected':
         return 'danger';
-      case 'pending_approval':
-        return 'warn';
       default:
         return 'secondary';
     }

@@ -26,7 +26,14 @@
         }
         <i class="pi pi-angle-down"></i>
       </button>
-      <p-menu #menu [model]="userMenuItems" [popup]="true" appendTo="body"></p-menu>
+      <p-menu
+        #menu
+        [model]="userMenuItems"
+        [popup]="true"
+        appendTo="body"
+        [autoZIndex]="true"
+        [baseZIndex]="10000"
+      ></p-menu>
     </div>
   </div>
 </header>

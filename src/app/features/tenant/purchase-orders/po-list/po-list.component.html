@@ -7,7 +7,6 @@
   </div>
 
   <div class="table-card">
-    <!-- Filter Bar -->
     <div class="filter-bar">
       <div class="search-input">
         <i class="pi pi-search"></i>
@@ -30,7 +29,6 @@
       </div>
     </div>
 
-    <!-- Stats Row -->
     <div class="stats-row">
       <div class="stat-item">
         <div class="stat-icon blue"><i class="pi pi-shopping-cart"></i></div>
@@ -47,10 +45,17 @@
         </div>
       </div>
       <div class="stat-item">
+        <div class="stat-icon blue"><i class="pi pi-clock"></i></div>
+        <div class="stat-info">
+          <div class="stat-value">{{ pendingApprovalCount }}</div>
+          <div class="stat-label">Pending Approval</div>
+        </div>
+      </div>
+      <div class="stat-item">
         <div class="stat-icon green"><i class="pi pi-check-circle"></i></div>
         <div class="stat-info">
-          <div class="stat-value">{{ confirmedCount }}</div>
-          <div class="stat-label">Confirmed</div>
+          <div class="stat-value">{{ approvedCount }}</div>
+          <div class="stat-label">Approved</div>
         </div>
       </div>
       <div class="stat-item">
@@ -62,7 +67,6 @@
       </div>
     </div>
 
-    <!-- Table -->
     <p-table
       [value]="filteredPOs"
       [loading]="loading"
@@ -80,7 +84,7 @@
           <th class="hide-mobile">Expected Delivery</th>
           <th>Total Amount</th>
           <th>Status</th>
-          <th style="width: 120px">Actions</th>
+          <th style="width: 180px">Actions</th>
         </tr>
       </ng-template>
       <ng-template pTemplate="body" let-po>
@@ -92,7 +96,7 @@
             <span class="cell-primary">{{ po.vendor?.companyName || '-' }}</span>
           </td>
           <td class="hide-mobile">
-            <span class="cell-muted">{{ po.poDate | date : 'mediumDate' }}</span>
+            <span class="cell-muted">{{ po.createdAt | date : 'mediumDate' }}</span>
           </td>
           <td class="hide-mobile">
             <span class="cell-muted">{{
@@ -104,9 +108,16 @@
           </td>
           <td>
             <p-tag
-              [value]="po.status | titlecase"
+              [value]="getStatusLabel(po.status)"
               [severity]="getStatusSeverity(po.status)"
             ></p-tag>
+            @if (po.status === 'rejected' && po.rejectionReason) {
+            <i
+              class="pi pi-info-circle ml-2 text-red-500 cursor-pointer"
+              [pTooltip]="po.rejectionReason"
+              tooltipPosition="top"
+            ></i>
+            }
           </td>
           <td>
             <div class="action-buttons">
@@ -120,12 +131,37 @@
               ></p-button>
               @if (po.status === 'draft') {
               <p-button
+                icon="pi pi-send"
+                [rounded]="true"
+                [text]="true"
+                severity="info"
+                pTooltip="Submit for Approval"
+                (click)="submitForApproval(po)"
+              ></p-button>
+              <p-button
                 icon="pi pi-trash"
                 [rounded]="true"
                 [text]="true"
                 severity="danger"
                 pTooltip="Delete"
                 (click)="confirmDelete(po)"
+              ></p-button>
+              } @if (po.status === 'pending_approval' && canApprove) {
+              <p-button
+                icon="pi pi-check"
+                [rounded]="true"
+                [text]="true"
+                severity="success"
+                pTooltip="Approve"
+                (click)="approvePO(po)"
+              ></p-button>
+              <p-button
+                icon="pi pi-times"
+                [rounded]="true"
+                [text]="true"
+                severity="danger"
+                pTooltip="Reject"
+                (click)="openRejectDialog(po)"
               ></p-button>
               }
             </div>
@@ -147,3 +183,39 @@
     </p-table>
   </div>
 </div>
+
+<p-dialog
+  header="Reject Purchase Order"
+  [(visible)]="showRejectDialog"
+  [modal]="true"
+  [style]="{ width: '450px' }"
+  [closable]="true"
+>
+  <div class="flex flex-col gap-4">
+    <p>
+      Are you sure you want to reject PO <strong>{{ selectedPOForRejection?.poNumber }}</strong
+      >?
+    </p>
+    <div class="flex flex-col gap-2">
+      <label for="rejectionReason">Rejection Reason *</label>
+      <textarea
+        pTextarea
+        id="rejectionReason"
+        [(ngModel)]="rejectionReason"
+        rows="4"
+        placeholder="Please provide a reason for rejection..."
+        class="w-full"
+      ></textarea>
+    </div>
+  </div>
+  <ng-template pTemplate="footer">
+    <p-button label="Cancel" severity="secondary" (click)="cancelReject()"></p-button>
+    <p-button
+      label="Reject"
+      severity="danger"
+      icon="pi pi-times"
+      (click)="confirmReject()"
+      [disabled]="!rejectionReason.trim()"
+    ></p-button>
+  </ng-template>
+</p-dialog>

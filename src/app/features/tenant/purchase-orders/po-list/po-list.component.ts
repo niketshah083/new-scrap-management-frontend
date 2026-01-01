@@ -7,15 +7,20 @@ import { Button } from 'primeng/button';
 import { Tag } from 'primeng/tag';
 import { Select } from 'primeng/select';
 import { Tooltip } from 'primeng/tooltip';
+import { Dialog } from 'primeng/dialog';
+import { Textarea } from 'primeng/textarea';
 import { PurchaseOrderService } from '../purchase-order.service';
 import { PurchaseOrder } from '../purchase-order.model';
 import { ToastService } from '../../../../core/services/toast.service';
 import { ConfirmService } from '../../../../core/services/confirm.service';
+import { AuthService } from '../../../../core/services/auth.service';
+import { ModuleCode } from '../../../../core/enums/modules.enum';
+import { OperationCode } from '../../../../core/enums/operations.enum';
 
 @Component({
   selector: 'app-po-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, TableModule, Button, Tag, Select, Tooltip],
+  imports: [CommonModule, FormsModule, TableModule, Button, Tag, Select, Tooltip, Dialog, Textarea],
   templateUrl: './po-list.component.html',
   styleUrls: ['./po-list.component.scss'],
 })
@@ -26,9 +31,16 @@ export class PoListComponent implements OnInit {
   searchTerm = '';
   selectedStatus: string | null = null;
 
+  // Rejection dialog
+  showRejectDialog = false;
+  rejectionReason = '';
+  selectedPOForRejection: PurchaseOrder | null = null;
+
   statusOptions = [
     { label: 'Draft', value: 'draft' },
-    { label: 'Confirmed', value: 'confirmed' },
+    { label: 'Pending Approval', value: 'pending_approval' },
+    { label: 'Approved', value: 'approved' },
+    { label: 'Rejected', value: 'rejected' },
     { label: 'Partial', value: 'partial' },
     { label: 'Completed', value: 'completed' },
     { label: 'Cancelled', value: 'cancelled' },
@@ -38,6 +50,7 @@ export class PoListComponent implements OnInit {
     private poService: PurchaseOrderService,
     private toastService: ToastService,
     private confirmService: ConfirmService,
+    private authService: AuthService,
     private router: Router
   ) {}
 
@@ -53,12 +66,20 @@ export class PoListComponent implements OnInit {
     return this.purchaseOrders.filter((p) => p.status === 'draft').length;
   }
 
-  get confirmedCount(): number {
-    return this.purchaseOrders.filter((p) => p.status === 'confirmed').length;
+  get pendingApprovalCount(): number {
+    return this.purchaseOrders.filter((p) => p.status === 'pending_approval').length;
+  }
+
+  get approvedCount(): number {
+    return this.purchaseOrders.filter((p) => p.status === 'approved').length;
   }
 
   get totalAmount(): number {
     return this.purchaseOrders.reduce((sum, p) => sum + (p.totalAmount || 0), 0);
+  }
+
+  get canApprove(): boolean {
+    return this.authService.hasPermission(`${ModuleCode.PurchaseOrder}:${OperationCode.Approve}`);
   }
 
   onSearch(): void {
@@ -129,18 +150,98 @@ export class PoListComponent implements OnInit {
     });
   }
 
+  submitForApproval(po: PurchaseOrder): void {
+    this.confirmService
+      .confirm(`Submit PO "${po.poNumber}" for approval?`, 'Submit for Approval')
+      .then((confirmed) => {
+        if (confirmed) {
+          this.poService.submitForApproval(po.id).subscribe({
+            next: (res) => {
+              if (res.success) {
+                this.toastService.showSuccess('Success', 'Purchase order submitted for approval');
+                this.loadPurchaseOrders();
+              }
+            },
+            error: () =>
+              this.toastService.showError('Error', 'Failed to submit purchase order for approval'),
+          });
+        }
+      });
+  }
+
+  approvePO(po: PurchaseOrder): void {
+    this.confirmService
+      .confirm(`Approve PO "${po.poNumber}"?`, 'Approve Purchase Order')
+      .then((confirmed) => {
+        if (confirmed) {
+          this.poService.approve(po.id).subscribe({
+            next: (res) => {
+              if (res.success) {
+                this.toastService.showSuccess('Success', 'Purchase order approved');
+                this.loadPurchaseOrders();
+              }
+            },
+            error: () => this.toastService.showError('Error', 'Failed to approve purchase order'),
+          });
+        }
+      });
+  }
+
+  openRejectDialog(po: PurchaseOrder): void {
+    this.selectedPOForRejection = po;
+    this.rejectionReason = '';
+    this.showRejectDialog = true;
+  }
+
+  confirmReject(): void {
+    if (!this.selectedPOForRejection || !this.rejectionReason.trim()) {
+      this.toastService.showError('Error', 'Please provide a rejection reason');
+      return;
+    }
+
+    this.poService.reject(this.selectedPOForRejection.id, this.rejectionReason).subscribe({
+      next: (res) => {
+        if (res.success) {
+          this.toastService.showSuccess('Success', 'Purchase order rejected');
+          this.showRejectDialog = false;
+          this.selectedPOForRejection = null;
+          this.rejectionReason = '';
+          this.loadPurchaseOrders();
+        }
+      },
+      error: () => this.toastService.showError('Error', 'Failed to reject purchase order'),
+    });
+  }
+
+  cancelReject(): void {
+    this.showRejectDialog = false;
+    this.selectedPOForRejection = null;
+    this.rejectionReason = '';
+  }
+
   getStatusSeverity(status: string): 'success' | 'info' | 'warn' | 'danger' | 'secondary' {
     switch (status) {
       case 'completed':
+      case 'approved':
         return 'success';
-      case 'confirmed':
+      case 'pending_approval':
         return 'info';
       case 'partial':
         return 'warn';
       case 'cancelled':
+      case 'rejected':
         return 'danger';
       default:
         return 'secondary';
+    }
+  }
+
+  getStatusLabel(status: string): string {
+    switch (status) {
+      case 'pending_approval':
+        return 'Pending Approval';
+      default:
+        return status.charAt(0).toUpperCase() + status.slice(1);
     }
   }
 }

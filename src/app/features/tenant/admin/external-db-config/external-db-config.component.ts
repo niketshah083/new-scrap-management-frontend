@@ -14,7 +14,6 @@ import {
   FieldMapping,
 } from './external-db-config.service';
 import { ToastService } from '../../../../core/services/toast.service';
-import { AuthService } from '../../../../core/services/auth.service';
 import { SelectComponent } from '../../../../shared/components/select/select.component';
 
 @Component({
@@ -556,7 +555,6 @@ export class ExternalDbConfigComponent implements OnInit {
   saving = false;
   testing = false;
   form!: FormGroup;
-  tenantId!: number;
 
   transformOptions = [
     { label: 'String', value: 'string' },
@@ -568,18 +566,13 @@ export class ExternalDbConfigComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private configService: ExternalDbConfigService,
-    private toastService: ToastService,
-    private authService: AuthService
+    private toastService: ToastService
   ) {
     this.initForm();
   }
 
   ngOnInit(): void {
-    const user = this.authService.getCurrentUser();
-    if (user?.tenantId) {
-      this.tenantId = user.tenantId;
-      this.loadConfig();
-    }
+    this.loadConfig();
   }
 
   private initForm(): void {
@@ -614,7 +607,7 @@ export class ExternalDbConfigComponent implements OnInit {
 
   loadConfig(): void {
     this.loading = true;
-    this.configService.getConfig(this.tenantId).subscribe({
+    this.configService.getConfig().subscribe({
       next: (res) => {
         if (res.success && res.data) {
           this.config = res.data;
@@ -721,7 +714,7 @@ export class ExternalDbConfigComponent implements OnInit {
     }
 
     this.saving = true;
-    this.configService.updateConfig(this.tenantId, updateData).subscribe({
+    this.configService.updateConfig(0, updateData).subscribe({
       next: (res) => {
         this.saving = false;
         if (res.success) {
@@ -741,7 +734,7 @@ export class ExternalDbConfigComponent implements OnInit {
 
   testConnection(): void {
     this.testing = true;
-    this.configService.testConnection(this.tenantId).subscribe({
+    this.configService.testConnection().subscribe({
       next: (res) => {
         this.testing = false;
         if (res.success && res.data?.connected) {
