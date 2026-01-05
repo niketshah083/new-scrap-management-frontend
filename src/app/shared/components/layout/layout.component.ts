@@ -4,6 +4,7 @@ import { RouterOutlet } from '@angular/router';
 import { SidebarComponent } from '../sidebar/sidebar.component';
 import { HeaderComponent } from '../header/header.component';
 import { NotificationPanelComponent } from '../notification-panel/notification-panel.component';
+import { RFIDListenerComponent } from '../rfid-listener/rfid-listener.component';
 import { AuthService } from '../../../core/services/auth.service';
 
 export interface MenuItem {
@@ -24,6 +25,7 @@ export interface MenuItem {
     SidebarComponent,
     HeaderComponent,
     NotificationPanelComponent,
+    RFIDListenerComponent,
   ],
   templateUrl: './layout.component.html',
   styleUrls: ['./layout.component.scss'],
@@ -166,6 +168,21 @@ export class LayoutComponent implements OnInit {
           label: 'External DB',
           icon: 'pi pi-database',
           route: '/admin/external-db',
+        });
+      }
+      if (this.authService.hasAnyPermission(['RFID:List', 'RFID:Create'])) {
+        adminChildren.push({
+          label: 'RFID Cards',
+          icon: 'pi pi-wifi',
+          route: '/admin/rfid-cards',
+        });
+      }
+      // Also add RFID Cards without permission check for now (new module)
+      if (!adminChildren.find((c) => c.label === 'RFID Cards')) {
+        adminChildren.push({
+          label: 'RFID Cards',
+          icon: 'pi pi-wifi',
+          route: '/admin/rfid-cards',
         });
       }
       if (adminChildren.length > 0) {

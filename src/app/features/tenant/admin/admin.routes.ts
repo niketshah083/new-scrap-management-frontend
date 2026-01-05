@@ -23,4 +23,9 @@ export const ADMIN_ROUTES: Routes = [
         (m) => m.ExternalDbConfigComponent
       ),
   },
+  {
+    path: 'rfid-cards',
+    loadComponent: () =>
+      import('./rfid-cards/rfid-card-list.component').then((m) => m.RfidCardListComponent),
+  },
 ];

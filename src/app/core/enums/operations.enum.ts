@@ -10,6 +10,8 @@ export enum OperationCode {
   Approve = 'Approve',
   Edit = 'Edit',
   Verify = 'Verify',
+  Scan = 'Scan',
+  Assign = 'Assign',
 
   // GRN Step-wise operations
   STEP1_GATE_ENTRY = 'STEP1_GATE_ENTRY',
@@ -33,6 +35,8 @@ export const OperationDefinitions: Record<OperationCode, { name: string }> = {
   [OperationCode.Approve]: { name: 'Approve' },
   [OperationCode.Edit]: { name: 'Edit' },
   [OperationCode.Verify]: { name: 'Verify' },
+  [OperationCode.Scan]: { name: 'Scan' },
+  [OperationCode.Assign]: { name: 'Assign' },
 
   // GRN Step-wise operations
   [OperationCode.STEP1_GATE_ENTRY]: { name: 'Step 1 - Gate Entry' },
@@ -81,4 +85,6 @@ export const STANDARD_OPERATIONS = [
   OperationCode.Approve,
   OperationCode.Edit,
   OperationCode.Verify,
+  OperationCode.Scan,
+  OperationCode.Assign,
 ];

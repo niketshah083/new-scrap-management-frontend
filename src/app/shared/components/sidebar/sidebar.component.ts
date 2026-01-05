@@ -157,6 +157,12 @@ export class SidebarComponent implements OnInit, OnDestroy {
           route: '/admin/external-db',
           permission: `${ModuleCode.ExternalDbConfig}:${OperationCode.Read}`,
         },
+        {
+          label: 'RFID Cards',
+          icon: 'pi pi-wifi',
+          route: '/admin/rfid-cards',
+          // No permission check for now - new module
+        },
       ];
 
       this.menuItems = tenantMenuItems.filter((item) => {

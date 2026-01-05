@@ -19,6 +19,7 @@ export enum ModuleCode {
   SuperAdmin = 'SuperAdmin',
   Notification = 'Notification',
   ExternalDbConfig = 'ExternalDbConfig',
+  RFID = 'RFID',
 }
 
 export const ModuleDefinitions: Record<ModuleCode, { name: string; description: string }> = {
@@ -49,5 +50,9 @@ export const ModuleDefinitions: Record<ModuleCode, { name: string; description: 
   [ModuleCode.ExternalDbConfig]: {
     name: 'External DB Config',
     description: 'External database configuration management',
+  },
+  [ModuleCode.RFID]: {
+    name: 'RFID',
+    description: 'RFID card management and scanning',
   },
 };

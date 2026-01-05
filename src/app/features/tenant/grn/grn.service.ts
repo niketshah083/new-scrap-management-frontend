@@ -7,6 +7,7 @@ import {
   GRN,
   GRNFieldConfig,
   CreateGRNRequest,
+  UpdateGRNStep1Request,
   UpdateGRNStep2Request,
   UpdateGRNStep3Request,
   UpdateGRNStep4Request,
@@ -51,6 +52,10 @@ export class GrnService {
 
   create(data: CreateGRNRequest): Observable<ApiResponse<GRN>> {
     return this.http.post<ApiResponse<GRN>>(this.apiUrl, data);
+  }
+
+  updateStep1(id: number, data: UpdateGRNStep1Request): Observable<ApiResponse<GRN>> {
+    return this.http.put<ApiResponse<GRN>>(`${this.apiUrl}/${id}/step1`, data);
   }
 
   updateStep2(id: number, data: UpdateGRNStep2Request): Observable<ApiResponse<GRN>> {

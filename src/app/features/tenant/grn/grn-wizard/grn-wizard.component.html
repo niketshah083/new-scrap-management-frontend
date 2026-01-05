@@ -15,6 +15,13 @@
     @if (grn) {
     <div class="header-right">
       <span class="status-badge" [class]="grn.status">{{ grn.status | titlecase }}</span>
+      <!-- RFID Card Badge -->
+      @if (grn.rfidCard) {
+      <span class="rfid-badge assigned">
+        <i class="pi pi-wifi"></i>
+        {{ grn.rfidCard.label || grn.rfidCard.cardNumber }}
+      </span>
+      }
     </div>
     }
   </div>
@@ -33,7 +40,8 @@
         class="step-item"
         [class.active]="currentStep === step.step"
         [class.completed]="currentStep > step.step"
-        [class.clickable]="grnId && grn && step.step <= grn.currentStep"
+        [class.clickable]="canNavigateToStep(step.step)"
+        (click)="navigateToStep(step.step)"
       >
         <div class="step-circle">
           @if (currentStep > step.step) {
@@ -47,6 +55,26 @@
       }
     </div>
   </div>
+
+  <!-- Editing Previous Step Banner -->
+  @if (isEditingCompletedStep()) {
+  <div class="editing-banner">
+    <div class="editing-banner-content">
+      <i class="pi pi-pencil"></i>
+      <div class="editing-banner-text">
+        <strong>Editing Step {{ currentStep }}: {{ steps[currentStep - 1].label }}</strong>
+        <span
+          >Current progress is at Step {{ grn?.currentStep }}:
+          {{ steps[(grn?.currentStep || 1) - 1].label }}</span
+        >
+      </div>
+    </div>
+    <button class="editing-banner-btn" (click)="navigateToStep(grn!.currentStep)">
+      <i class="pi pi-arrow-right"></i>
+      Go to Current Step
+    </button>
+  </div>
+  }
 
   <!-- Main Content Card -->
   <div class="wizard-content">
@@ -102,6 +130,63 @@
             </div>
           </div>
         </div>
+
+        <!-- RFID Card Assignment (only show if cards are available) -->
+        @if (availableRfidCards.length > 0 || selectedRfidCardNumber) {
+        <div class="form-section rfid-inline-section">
+          <h3 class="section-title"><i class="pi pi-wifi"></i> RFID Card (Optional)</h3>
+          <div class="rfid-input-group">
+            <div class="form-field rfid-scan-field">
+              <label for="rfidScan">Scan or Enter Card Number</label>
+              <div class="scan-input-wrapper">
+                <i class="pi pi-wifi scan-icon"></i>
+                <input
+                  pInputText
+                  id="rfidScan"
+                  [(ngModel)]="rfidScanInput"
+                  [ngModelOptions]="{ standalone: true }"
+                  placeholder="Scan RFID card here..."
+                  (keydown.enter)="onRfidScanEnter($event)"
+                  (input)="onRfidInputChange()"
+                  class="scan-input"
+                />
+                @if (rfidScanInput) {
+                <button type="button" class="clear-btn" (click)="clearRfidSelection()">
+                  <i class="pi pi-times"></i>
+                </button>
+                }
+              </div>
+            </div>
+            <div class="rfid-or-divider">OR</div>
+            <div class="form-field rfid-select-field">
+              <app-select
+                id="rfidCard"
+                [(ngModel)]="selectedRfidCardNumber"
+                [ngModelOptions]="{ standalone: true }"
+                [options]="availableRfidCards"
+                label="Select from List"
+                optionLabel="label"
+                optionValue="cardNumber"
+                placeholder="Choose a card"
+                [showClear]="true"
+                (ngModelChange)="onRfidDropdownChange($event)"
+              ></app-select>
+            </div>
+          </div>
+          @if (selectedRfidCardLabel) {
+          <div class="rfid-selected-info">
+            <i class="pi pi-check-circle"></i>
+            <span
+              >Selected: <strong>{{ selectedRfidCardLabel }}</strong></span
+            >
+          </div>
+          }
+          <small class="field-hint">
+            <i class="pi pi-info-circle"></i>
+            Assign an RFID card to quickly access this GRN by scanning at any step
+          </small>
+        </div>
+        }
 
         <!-- Dynamic fields for Step 1 -->
         @if (fieldConfigs.length > 0) {
@@ -205,9 +290,9 @@
           ></p-button>
           <p-button
             type="submit"
-            label="Continue"
-            icon="pi pi-arrow-right"
-            iconPos="right"
+            [label]="getSubmitButtonLabel()"
+            [icon]="isEditingCompletedStep() ? 'pi pi-save' : 'pi pi-arrow-right'"
+            [iconPos]="isEditingCompletedStep() ? 'left' : 'right'"
             [loading]="loading"
           ></p-button>
         </div>
@@ -573,11 +658,20 @@
             [outlined]="true"
             (click)="goBack()"
           ></p-button>
+          @if (isEditingCompletedStep()) {
           <p-button
-            type="submit"
-            label="Continue"
+            label="Back to Current Step"
             icon="pi pi-arrow-right"
             iconPos="right"
+            severity="secondary"
+            (click)="navigateToStep(grn!.currentStep)"
+          ></p-button>
+          }
+          <p-button
+            type="submit"
+            [label]="getSubmitButtonLabel()"
+            [icon]="isEditingCompletedStep() ? 'pi pi-save' : 'pi pi-arrow-right'"
+            [iconPos]="isEditingCompletedStep() ? 'left' : 'right'"
             [loading]="loading"
             [disabled]="fieldConfigs.length === 0"
           ></p-button>

@@ -8,7 +8,13 @@ import {
 } from '@angular/core';
 import { CommonModule, DatePipe, TitleCasePipe } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  FormBuilder,
+  FormGroup,
+  ReactiveFormsModule,
+  Validators,
+  FormsModule,
+} from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { Button } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
@@ -22,9 +28,11 @@ import { GrnService } from '../grn.service';
 import { PurchaseOrderService } from '../../purchase-orders/purchase-order.service';
 import { VendorService } from '../../vendors/vendor.service';
 import { GatePassService } from '../../gate-pass/gate-pass.service';
+import { RFIDService } from '../../rfid/rfid.service';
 import { Vendor } from '../../vendors/vendor.model';
 import { GRN, GRNFieldConfig } from '../grn.model';
 import { GatePass } from '../../gate-pass/gate-pass.model';
+import { RFIDCard } from '../../rfid/rfid-card.model';
 import { ToastService } from '../../../../core/services/toast.service';
 import { SelectComponent } from '../../../../shared/components/select/select.component';
 import { FileUploadComponent } from '../../../../shared/components/file-upload/file-upload.component';
@@ -38,6 +46,7 @@ import { environment } from '../../../../../environments/environment';
     DatePipe,
     TitleCasePipe,
     ReactiveFormsModule,
+    FormsModule,
     Button,
     InputTextModule,
     InputNumber,
@@ -73,6 +82,13 @@ export class GrnWizardComponent implements OnInit, OnDestroy {
   previewImageTitle = '';
   apiUrl = environment.apiUrl;
 
+  // RFID Card assignment
+  availableRfidCards: RFIDCard[] = [];
+  selectedRfidCardNumber: string | null = null;
+  selectedRfidCardLabel: string | null = null;
+  rfidScanInput: string = '';
+  assigningRfidCard = false;
+
   steps = [
     { label: 'Gate Entry', step: 1 },
     { label: 'Initial Weighing', step: 2 },
@@ -91,6 +107,7 @@ export class GrnWizardComponent implements OnInit, OnDestroy {
     private poService: PurchaseOrderService,
     private vendorService: VendorService,
     private gatePassService: GatePassService,
+    private rfidService: RFIDService,
     private toastService: ToastService
   ) {
     this.dynamicForm = this.fb.group({});
@@ -100,6 +117,7 @@ export class GrnWizardComponent implements OnInit, OnDestroy {
     this.initForm();
     this.loadPurchaseOrders();
     this.loadVendors();
+    this.loadAvailableRfidCards();
 
     // Subscribe to route param changes to handle step navigation
     this.routeSub = this.route.paramMap.subscribe((params) => {
@@ -176,6 +194,141 @@ export class GrnWizardComponent implements OnInit, OnDestroy {
         if (res.success && res.data) {
           this.vendors = res.data;
         }
+      },
+    });
+  }
+
+  private loadAvailableRfidCards(): void {
+    this.rfidService.getAvailable().subscribe({
+      next: (res) => {
+        if (res.success && res.data) {
+          this.availableRfidCards = res.data;
+        }
+      },
+    });
+  }
+
+  /**
+   * Handle RFID scan input - when Enter is pressed after scanning
+   */
+  onRfidScanEnter(event: Event): void {
+    event.preventDefault();
+    const cardNumber = this.rfidScanInput.trim();
+    if (!cardNumber) return;
+
+    // Find the card in available cards
+    const card = this.availableRfidCards.find((c) => c.cardNumber === cardNumber);
+    if (card) {
+      this.selectedRfidCardNumber = card.cardNumber;
+      this.selectedRfidCardLabel = card.label || card.cardNumber;
+      this.toastService.showSuccess(
+        'RFID Card Found',
+        `Card "${card.label || card.cardNumber}" selected`
+      );
+    } else {
+      this.toastService.showError(
+        'Card Not Found',
+        `Card "${cardNumber}" is not available or doesn't exist`
+      );
+      this.rfidScanInput = '';
+    }
+  }
+
+  /**
+   * Handle manual input change - try to match as user types
+   */
+  onRfidInputChange(): void {
+    const cardNumber = this.rfidScanInput.trim();
+    if (!cardNumber) {
+      this.selectedRfidCardNumber = null;
+      this.selectedRfidCardLabel = null;
+      return;
+    }
+
+    // Auto-select if exact match found
+    const card = this.availableRfidCards.find((c) => c.cardNumber === cardNumber);
+    if (card) {
+      this.selectedRfidCardNumber = card.cardNumber;
+      this.selectedRfidCardLabel = card.label || card.cardNumber;
+    }
+  }
+
+  /**
+   * Handle dropdown selection change
+   */
+  onRfidDropdownChange(cardNumber: string | null): void {
+    if (cardNumber) {
+      const card = this.availableRfidCards.find((c) => c.cardNumber === cardNumber);
+      this.rfidScanInput = cardNumber;
+      this.selectedRfidCardLabel = card?.label || cardNumber;
+    } else {
+      this.rfidScanInput = '';
+      this.selectedRfidCardLabel = null;
+    }
+  }
+
+  /**
+   * Clear RFID selection
+   */
+  clearRfidSelection(): void {
+    this.rfidScanInput = '';
+    this.selectedRfidCardNumber = null;
+    this.selectedRfidCardLabel = null;
+  }
+
+  /**
+   * Assign RFID card to GRN after creation
+   */
+  assignRfidCard(): void {
+    if (!this.grnId || !this.selectedRfidCardNumber) {
+      this.toastService.showError('Error', 'Please select an RFID card');
+      return;
+    }
+
+    this.assigningRfidCard = true;
+    this.rfidService
+      .assign({ cardNumber: this.selectedRfidCardNumber, grnId: this.grnId })
+      .subscribe({
+        next: (res) => {
+          this.assigningRfidCard = false;
+          if (res.success) {
+            this.toastService.showSuccess('Success', 'RFID card assigned to GRN');
+            // Reload GRN to get updated rfidCardId
+            this.loadGRN();
+            // Reload available cards
+            this.loadAvailableRfidCards();
+          }
+        },
+        error: (err) => {
+          this.assigningRfidCard = false;
+          const errorMessage = err.error?.message || 'Failed to assign RFID card';
+          this.toastService.showError('Error', errorMessage);
+        },
+      });
+  }
+
+  /**
+   * Unassign RFID card from GRN
+   */
+  unassignRfidCard(): void {
+    if (!this.grn?.rfidCard?.cardNumber) {
+      return;
+    }
+
+    this.assigningRfidCard = true;
+    this.rfidService.unassign(this.grn.rfidCard.cardNumber).subscribe({
+      next: (res) => {
+        this.assigningRfidCard = false;
+        if (res.success) {
+          this.toastService.showSuccess('Success', 'RFID card unassigned');
+          this.loadGRN();
+          this.loadAvailableRfidCards();
+        }
+      },
+      error: (err) => {
+        this.assigningRfidCard = false;
+        const errorMessage = err.error?.message || 'Failed to unassign RFID card';
+        this.toastService.showError('Error', errorMessage);
       },
     });
   }
@@ -262,8 +415,18 @@ export class GrnWizardComponent implements OnInit, OnDestroy {
       if (this.grn?.fieldValues) {
         const savedValue = this.grn.fieldValues.find((fv) => fv.fieldConfigId === field.id);
         if (savedValue) {
-          defaultValue =
-            field.fieldType === 'number' ? parseFloat(savedValue.value) : savedValue.value;
+          // Get value based on field type
+          if (field.fieldType === 'number') {
+            defaultValue = savedValue.numberValue ?? null;
+          } else if (field.fieldType === 'photo' || field.fieldType === 'file') {
+            // For file fields, use textValue or fileUrl
+            defaultValue = savedValue.textValue || savedValue.fileUrl || '';
+          } else if (field.fieldType === 'date') {
+            defaultValue = savedValue.dateValue ? new Date(savedValue.dateValue) : null;
+          } else {
+            // For text, dropdown, etc.
+            defaultValue = savedValue.textValue || savedValue.value || '';
+          }
         }
       }
 
@@ -296,50 +459,58 @@ export class GrnWizardComponent implements OnInit, OnDestroy {
     }
 
     this.loading = true;
-    if (!this.grnId) {
-      // Create new GRN (Step 1)
-      // Collect dynamic field values for Step 1
-      const fieldValues: { fieldConfigId: number; value: string }[] = [];
-      for (const field of this.fieldConfigs) {
-        const value = this.dynamicForm.get(field.fieldName)?.value;
-        if (value !== null && value !== undefined && value !== '') {
-          fieldValues.push({
-            fieldConfigId: field.id,
-            value: String(value),
-          });
-        }
-      }
 
-      // Only 3 static fields: purchaseOrderId, vendorId, truckNumber
-      const data: any = {
-        purchaseOrderId: this.form.value.purchaseOrderId,
-        vendorId: this.form.value.vendorId,
-        truckNumber: this.form.value.truckNumber,
-      };
-
-      // Include field values if any
-      if (fieldValues.length > 0) {
-        data.fieldValues = fieldValues;
-      }
-
-      this.grnService.create(data).subscribe({
-        next: (res) => {
-          this.loading = false;
-          if (res.success && res.data) {
-            this.toastService.showSuccess('Success', 'GRN created');
-            this.router.navigate(['/grn', res.data.id, 'step', 2]);
-          }
-        },
-        error: (err) => {
-          this.loading = false;
-          const errorMessage =
-            err.error?.message || err.error?.errors?.join(', ') || 'Failed to create GRN';
-          this.toastService.showError('Error', errorMessage);
-        },
-      });
-    } else {
+    // If editing an existing GRN (including Step 1), use updateCurrentStep
+    if (this.grnId) {
       this.updateCurrentStep();
+      return;
     }
+
+    // Create new GRN (Step 1 - first time only)
+    // Collect dynamic field values for Step 1
+    const fieldValues: { fieldConfigId: number; value: string }[] = [];
+    for (const field of this.fieldConfigs) {
+      const value = this.dynamicForm.get(field.fieldName)?.value;
+      if (value !== null && value !== undefined && value !== '') {
+        fieldValues.push({
+          fieldConfigId: field.id,
+          value: String(value),
+        });
+      }
+    }
+
+    // Static fields: purchaseOrderId, vendorId, truckNumber, rfidCardNumber
+    const data: any = {
+      purchaseOrderId: this.form.value.purchaseOrderId,
+      vendorId: this.form.value.vendorId,
+      truckNumber: this.form.value.truckNumber,
+    };
+
+    // Include RFID card number if selected
+    if (this.selectedRfidCardNumber) {
+      data.rfidCardNumber = this.selectedRfidCardNumber;
+    }
+
+    // Include field values if any
+    if (fieldValues.length > 0) {
+      data.fieldValues = fieldValues;
+    }
+
+    this.grnService.create(data).subscribe({
+      next: (res) => {
+        this.loading = false;
+        if (res.success && res.data) {
+          this.toastService.showSuccess('Success', 'GRN created');
+          this.router.navigate(['/grn', res.data.id, 'step', 2]);
+        }
+      },
+      error: (err) => {
+        this.loading = false;
+        const errorMessage =
+          err.error?.message || err.error?.errors?.join(', ') || 'Failed to create GRN';
+        this.toastService.showError('Error', errorMessage);
+      },
+    });
   }
 
   private updateCurrentStep(): void {
@@ -362,22 +533,39 @@ export class GrnWizardComponent implements OnInit, OnDestroy {
       }
     }
 
+    console.log(`Updating step ${this.currentStep} for GRN ${this.grnId}`);
+    console.log('Field values:', fieldValues);
+
     let obs;
     switch (this.currentStep) {
+      case 1:
+        // Step 1: Static fields (purchaseOrderId, vendorId, truckNumber) + dynamic fields
+        console.log('Calling updateStep1 API');
+        obs = this.grnService.updateStep1(this.grnId, {
+          purchaseOrderId: this.form.value.purchaseOrderId || null,
+          vendorId: this.form.value.vendorId || null,
+          truckNumber: this.form.value.truckNumber,
+          fieldValues: fieldValues.length > 0 ? fieldValues : undefined,
+        });
+        break;
       case 2:
         // Step 2: All fields are dynamic (gross_weight, gross_weight_image)
+        console.log('Calling updateStep2 API');
         obs = this.grnService.updateStep2(this.grnId, { fieldValues });
         break;
       case 3:
         // Step 3: All fields are dynamic (driver_photo, driver_licence_image, unloading_photos, unloading_notes, material_count)
+        console.log('Calling updateStep3 API');
         obs = this.grnService.updateStep3(this.grnId, { fieldValues });
         break;
       case 4:
         // Step 4: All fields are dynamic (tare_weight, tare_weight_image, net_weight is auto-calculated)
+        console.log('Calling updateStep4 API');
         obs = this.grnService.updateStep4(this.grnId, { fieldValues });
         break;
       case 5:
         // Step 5: Static fields (verificationStatus, approvalStatus, rejectionReason)
+        console.log('Calling updateStep5 API');
         let verificationStatus = this.form.value.verificationStatus;
         if (verificationStatus) {
           // Convert "Verified" to "verified", "Not Verified" to "not_verified"
@@ -398,17 +586,30 @@ export class GrnWizardComponent implements OnInit, OnDestroy {
     obs.subscribe({
       next: (res) => {
         this.loading = false;
+        console.log(`Step ${this.currentStep} update response:`, res);
         if (res.success) {
-          this.toastService.showSuccess('Success', 'Step completed');
-          if (this.currentStep < 7) {
-            this.router.navigate(['/grn', this.grnId, 'step', this.currentStep + 1]);
+          // Check if we're editing a completed step or advancing
+          const isEditingCompletedStep = this.grn && this.currentStep < this.grn.currentStep;
+
+          if (isEditingCompletedStep) {
+            // Editing a completed step - stay on this step and show save message
+            this.toastService.showSuccess('Success', 'Changes saved');
+            // Reload GRN to get updated data
+            this.loadGRN();
           } else {
-            this.router.navigate(['/grn', this.grnId]);
+            // Advancing to next step
+            this.toastService.showSuccess('Success', 'Step completed');
+            if (this.currentStep < 7) {
+              this.router.navigate(['/grn', this.grnId, 'step', this.currentStep + 1]);
+            } else {
+              this.router.navigate(['/grn', this.grnId]);
+            }
           }
         }
       },
       error: (err) => {
         this.loading = false;
+        console.error(`Step ${this.currentStep} update error:`, err);
         const errorMessage =
           err.error?.message || err.error?.errors?.join(', ') || 'Failed to update step';
         this.toastService.showError('Error', errorMessage);
@@ -418,6 +619,41 @@ export class GrnWizardComponent implements OnInit, OnDestroy {
 
   goBack(): void {
     this.router.navigate(['/grn']);
+  }
+
+  /**
+   * Check if user can navigate to a specific step
+   * Can navigate to any step up to and including the GRN's current step
+   */
+  canNavigateToStep(step: number): boolean {
+    if (!this.grnId || !this.grn) return false;
+    // Can navigate to any completed step or the current step
+    return step <= this.grn.currentStep;
+  }
+
+  /**
+   * Navigate to a specific step (for editing completed steps)
+   */
+  navigateToStep(step: number): void {
+    if (!this.canNavigateToStep(step)) return;
+    if (step === this.currentStep) return; // Already on this step
+
+    this.router.navigate(['/grn', this.grnId, 'step', step]);
+  }
+
+  /**
+   * Check if we're editing a completed step (not the current active step)
+   */
+  isEditingCompletedStep(): boolean {
+    if (!this.grn) return false;
+    return this.currentStep < this.grn.currentStep;
+  }
+
+  /**
+   * Get the submit button label based on whether we're editing or continuing
+   */
+  getSubmitButtonLabel(): string {
+    return this.isEditingCompletedStep() ? 'Save Changes' : 'Continue';
   }
 
   onFileSelect(event: Event, fieldName: string): void {

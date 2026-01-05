@@ -424,13 +424,15 @@ html, body {
     }
   }
 
-  input, textarea, .p-inputtext, .p-select {
+  input, textarea, .p-inputtext {
     width: 100%;
     padding: 12px 14px;
     border: 1px solid #e2e8f0;
     border-radius: 10px;
     font-size: 14px;
     transition: all 0.2s;
+    height: 46px;
+    box-sizing: border-box;
 
     &:focus {
       outline: none;
@@ -444,8 +446,49 @@ html, body {
   }
 
   textarea {
-    resize: vertical;
+    height: auto;
     min-height: 80px;
+    resize: vertical;
+  }
+
+  /* PrimeNG Select - Match input height */
+  .p-select {
+    width: 100%;
+    height: 46px;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 14px;
+    transition: all 0.2s;
+
+    &:not(.p-disabled):hover {
+      border-color: #cbd5e1;
+    }
+
+    &:not(.p-disabled).p-focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    .p-select-label {
+      padding: 12px 14px;
+      color: #334155;
+
+      &.p-placeholder {
+        color: #94a3b8;
+      }
+    }
+
+    .p-select-dropdown {
+      width: 46px;
+      border-radius: 0 10px 10px 0;
+      color: #64748b;
+    }
+
+    .p-select-clear-icon {
+      color: #94a3b8;
+      right: 46px;
+    }
   }
 }
 

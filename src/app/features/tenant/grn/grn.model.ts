@@ -1,3 +1,5 @@
+import { RFIDCard } from '../rfid/rfid-card.model';
+
 // Matches backend grn.entity.ts status field
 export type GRNStatus = 'in_progress' | 'completed' | 'rejected';
 
@@ -35,6 +37,10 @@ export interface GRN {
 
   // Step 1 - Gate Entry (static field)
   truckNumber: string;
+
+  // RFID Card assignment
+  rfidCardId?: number | null;
+  rfidCard?: RFIDCard;
 
   // Step 4 - Final Weighing (static field, auto-calculated)
   netWeight?: number;
@@ -88,7 +94,19 @@ export interface CreateGRNRequest {
   externalVendorId?: string;
   externalPoId?: string;
   truckNumber: string;
+  rfidCardNumber?: string;
   fieldValues?: { fieldConfigId: number; value: string }[];
+}
+
+/**
+ * Step 1 - Gate Entry (Update/Edit)
+ * Static fields: purchaseOrderId, vendorId, truckNumber
+ */
+export interface UpdateGRNStep1Request {
+  purchaseOrderId?: number | null;
+  vendorId?: number | null;
+  truckNumber?: string;
+  fieldValues?: { fieldConfigId?: number; fieldName?: string; value: string }[];
 }
 
 /**
