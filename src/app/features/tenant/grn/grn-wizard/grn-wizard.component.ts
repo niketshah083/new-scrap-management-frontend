@@ -24,6 +24,7 @@ import { DatePicker } from 'primeng/datepicker';
 import { Dialog } from 'primeng/dialog';
 import * as QRCode from 'qrcode';
 import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import { GrnService } from '../grn.service';
 import { PurchaseOrderService } from '../../purchase-orders/purchase-order.service';
 import { VendorService } from '../../vendors/vendor.service';
@@ -967,5 +968,497 @@ export class GrnWizardComponent implements OnInit, OnDestroy {
       7: 'View quality inspection results',
     };
     return descriptions[step] || '';
+  }
+
+  /**
+   * Generate and open GRN Review PDF in a new tab
+   * Includes all step details with images
+   */
+  async generateReviewPDF(): Promise<void> {
+    if (!this.grn) {
+      this.toastService.showError('Error', 'GRN data not available');
+      return;
+    }
+
+    this.loading = true;
+    this.toastService.showInfo('Generating PDF', 'Please wait while we prepare your document...');
+
+    try {
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const margin = 15;
+      let yPos = margin;
+
+      // Helper function to add a new page if needed
+      const checkPageBreak = (requiredHeight: number): void => {
+        if (yPos + requiredHeight > pageHeight - margin) {
+          doc.addPage();
+          yPos = margin;
+        }
+      };
+
+      // Helper function to load image as base64 using backend proxy (bypasses CORS)
+      const loadImageAsBase64 = async (imageKey: string): Promise<string | null> => {
+        return new Promise((resolve) => {
+          // Extract the key from the URL if it's a full URL
+          let key = imageKey;
+
+          // If it's a full URL, extract just the key part
+          if (imageKey.includes('/uploads/')) {
+            const parts = imageKey.split('/uploads/');
+            key = parts[parts.length - 1];
+          }
+
+          // Remove any query parameters (like signed URL params)
+          if (key.includes('?')) {
+            key = key.split('?')[0];
+          }
+
+          this.grnService.getFileAsBase64(key).subscribe({
+            next: (res) => {
+              if (res.success && res.data?.base64) {
+                resolve(res.data.base64);
+              } else {
+                resolve(null);
+              }
+            },
+            error: (err) => {
+              console.warn('Failed to load image via backend:', key, err);
+              resolve(null);
+            },
+          });
+
+          // Timeout after 15 seconds
+          setTimeout(() => resolve(null), 15000);
+        });
+      };
+
+      // ========== HEADER ==========
+      doc.setFillColor(16, 185, 129); // Green color
+      doc.rect(0, 0, pageWidth, 35, 'F');
+
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(22);
+      doc.setFont('helvetica', 'bold');
+      doc.text('GRN REVIEW REPORT', pageWidth / 2, 15, { align: 'center' });
+
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'normal');
+      doc.text(this.grn.grnNumber || 'N/A', pageWidth / 2, 25, { align: 'center' });
+
+      doc.setFontSize(10);
+      doc.text(`Generated: ${new Date().toLocaleString()}`, pageWidth / 2, 32, { align: 'center' });
+
+      yPos = 45;
+      doc.setTextColor(0, 0, 0);
+
+      // ========== GRN OVERVIEW ==========
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(16, 185, 129);
+      doc.text('GRN Overview', margin, yPos);
+      yPos += 8;
+
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(0, 0, 0);
+
+      const overviewData = [
+        ['GRN Number', this.grn.grnNumber || '-'],
+        ['Status', (this.grn.status || '-').toUpperCase()],
+        ['Vendor', this.grn.vendor?.companyName || '-'],
+        ['Truck Number', this.grn.truckNumber || '-'],
+        ['Purchase Order', this.grn.purchaseOrder?.poNumber || 'N/A'],
+        ['Current Step', `Step ${this.grn.currentStep}`],
+        ['Created At', this.grn.createdAt ? new Date(this.grn.createdAt).toLocaleString() : '-'],
+      ];
+
+      autoTable(doc, {
+        startY: yPos,
+        head: [],
+        body: overviewData,
+        theme: 'plain',
+        styles: { fontSize: 10, cellPadding: 3 },
+        columnStyles: {
+          0: { fontStyle: 'bold', cellWidth: 50 },
+          1: { cellWidth: pageWidth - margin * 2 - 50 },
+        },
+        margin: { left: margin, right: margin },
+      });
+
+      yPos = (doc as any).lastAutoTable.finalY + 15;
+
+      // ========== STEP 1: GATE ENTRY ==========
+      checkPageBreak(40);
+      doc.setFillColor(59, 130, 246); // Blue
+      doc.rect(margin, yPos, pageWidth - margin * 2, 8, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
+      doc.text('STEP 1: GATE ENTRY', margin + 3, yPos + 5.5);
+      yPos += 12;
+      doc.setTextColor(0, 0, 0);
+
+      const step1Data: string[][] = [
+        ['GRN Number', this.grn.grnNumber || '-'],
+        ['Vendor', this.grn.vendor?.companyName || '-'],
+        ['Truck Number', this.grn.truckNumber || '-'],
+        ['Purchase Order', this.grn.purchaseOrder?.poNumber || 'N/A'],
+      ];
+
+      // Add dynamic fields for step 1
+      const step1Fields = this.getFieldValuesByStep(1);
+      for (const fv of step1Fields) {
+        if (!this.isImageField(fv)) {
+          step1Data.push([fv.fieldConfig?.fieldLabel || 'Field', this.formatFieldValue(fv)]);
+        }
+      }
+
+      autoTable(doc, {
+        startY: yPos,
+        head: [],
+        body: step1Data,
+        theme: 'striped',
+        styles: { fontSize: 9, cellPadding: 2 },
+        columnStyles: {
+          0: { fontStyle: 'bold', cellWidth: 50 },
+        },
+        margin: { left: margin, right: margin },
+      });
+
+      yPos = (doc as any).lastAutoTable.finalY + 5;
+
+      // Add images for step 1
+      for (const fv of step1Fields) {
+        if (this.isImageField(fv)) {
+          const images = this.getImageUrls(fv);
+          if (images.length > 0) {
+            checkPageBreak(50);
+            doc.setFontSize(9);
+            doc.setFont('helvetica', 'bold');
+            doc.text(fv.fieldConfig?.fieldLabel || 'Images', margin, yPos);
+            yPos += 5;
+
+            let xPos = margin;
+            for (const img of images) {
+              const base64 = await loadImageAsBase64(img.key);
+              if (base64) {
+                checkPageBreak(45);
+                try {
+                  doc.addImage(base64, 'JPEG', xPos, yPos, 40, 35);
+                  xPos += 45;
+                  if (xPos + 40 > pageWidth - margin) {
+                    xPos = margin;
+                    yPos += 40;
+                  }
+                } catch {
+                  // Skip if image can't be added
+                }
+              }
+            }
+            yPos += 45;
+          }
+        }
+      }
+
+      // ========== STEP 2: INITIAL WEIGHING ==========
+      checkPageBreak(40);
+      doc.setFillColor(249, 115, 22); // Orange
+      doc.rect(margin, yPos, pageWidth - margin * 2, 8, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
+      doc.text('STEP 2: INITIAL WEIGHING', margin + 3, yPos + 5.5);
+      yPos += 12;
+      doc.setTextColor(0, 0, 0);
+
+      const step2Fields = this.getFieldValuesByStep(2);
+      const step2Data: string[][] = [];
+
+      for (const fv of step2Fields) {
+        if (!this.isImageField(fv)) {
+          let value = this.formatFieldValue(fv);
+          if (fv.fieldConfig?.fieldName?.includes('weight')) {
+            value += ' kg';
+          }
+          step2Data.push([fv.fieldConfig?.fieldLabel || 'Field', value]);
+        }
+      }
+
+      if (step2Data.length > 0) {
+        autoTable(doc, {
+          startY: yPos,
+          head: [],
+          body: step2Data,
+          theme: 'striped',
+          styles: { fontSize: 9, cellPadding: 2 },
+          columnStyles: {
+            0: { fontStyle: 'bold', cellWidth: 50 },
+          },
+          margin: { left: margin, right: margin },
+        });
+        yPos = (doc as any).lastAutoTable.finalY + 5;
+      }
+
+      // Add images for step 2
+      for (const fv of step2Fields) {
+        if (this.isImageField(fv)) {
+          const images = this.getImageUrls(fv);
+          if (images.length > 0) {
+            checkPageBreak(50);
+            doc.setFontSize(9);
+            doc.setFont('helvetica', 'bold');
+            doc.text(fv.fieldConfig?.fieldLabel || 'Images', margin, yPos);
+            yPos += 5;
+
+            let xPos = margin;
+            for (const img of images) {
+              const base64 = await loadImageAsBase64(img.key);
+              if (base64) {
+                checkPageBreak(45);
+                try {
+                  doc.addImage(base64, 'JPEG', xPos, yPos, 40, 35);
+                  xPos += 45;
+                  if (xPos + 40 > pageWidth - margin) {
+                    xPos = margin;
+                    yPos += 40;
+                  }
+                } catch {
+                  // Skip if image can't be added
+                }
+              }
+            }
+            yPos += 45;
+          }
+        }
+      }
+
+      // ========== STEP 3: UNLOADING ==========
+      checkPageBreak(40);
+      doc.setFillColor(139, 92, 246); // Purple
+      doc.rect(margin, yPos, pageWidth - margin * 2, 8, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
+      doc.text('STEP 3: UNLOADING', margin + 3, yPos + 5.5);
+      yPos += 12;
+      doc.setTextColor(0, 0, 0);
+
+      const step3Fields = this.getFieldValuesByStep(3);
+      const step3Data: string[][] = [];
+
+      for (const fv of step3Fields) {
+        if (!this.isImageField(fv)) {
+          step3Data.push([fv.fieldConfig?.fieldLabel || 'Field', this.formatFieldValue(fv)]);
+        }
+      }
+
+      if (step3Data.length > 0) {
+        autoTable(doc, {
+          startY: yPos,
+          head: [],
+          body: step3Data,
+          theme: 'striped',
+          styles: { fontSize: 9, cellPadding: 2 },
+          columnStyles: {
+            0: { fontStyle: 'bold', cellWidth: 50 },
+          },
+          margin: { left: margin, right: margin },
+        });
+        yPos = (doc as any).lastAutoTable.finalY + 5;
+      } else {
+        doc.setFontSize(9);
+        doc.text('No data recorded', margin, yPos);
+        yPos += 8;
+      }
+
+      // Add images for step 3
+      for (const fv of step3Fields) {
+        if (this.isImageField(fv)) {
+          const images = this.getImageUrls(fv);
+          if (images.length > 0) {
+            checkPageBreak(50);
+            doc.setFontSize(9);
+            doc.setFont('helvetica', 'bold');
+            doc.text(fv.fieldConfig?.fieldLabel || 'Images', margin, yPos);
+            yPos += 5;
+
+            let xPos = margin;
+            for (const img of images) {
+              const base64 = await loadImageAsBase64(img.key);
+              if (base64) {
+                checkPageBreak(45);
+                try {
+                  doc.addImage(base64, 'JPEG', xPos, yPos, 40, 35);
+                  xPos += 45;
+                  if (xPos + 40 > pageWidth - margin) {
+                    xPos = margin;
+                    yPos += 40;
+                  }
+                } catch {
+                  // Skip if image can't be added
+                }
+              }
+            }
+            yPos += 45;
+          }
+        }
+      }
+
+      // ========== STEP 4: FINAL WEIGHING ==========
+      checkPageBreak(40);
+      doc.setFillColor(34, 197, 94); // Green
+      doc.rect(margin, yPos, pageWidth - margin * 2, 8, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
+      doc.text('STEP 4: FINAL WEIGHING', margin + 3, yPos + 5.5);
+      yPos += 12;
+      doc.setTextColor(0, 0, 0);
+
+      const step4Fields = this.getFieldValuesByStep(4);
+      const step4Data: string[][] = [];
+
+      for (const fv of step4Fields) {
+        if (!this.isImageField(fv)) {
+          let value = this.formatFieldValue(fv);
+          if (fv.fieldConfig?.fieldName?.includes('weight')) {
+            value += ' kg';
+          }
+          step4Data.push([fv.fieldConfig?.fieldLabel || 'Field', value]);
+        }
+      }
+
+      // Add net weight
+      if (this.grn.netWeight) {
+        step4Data.push(['Net Weight', `${this.grn.netWeight} kg`]);
+      }
+
+      if (step4Data.length > 0) {
+        autoTable(doc, {
+          startY: yPos,
+          head: [],
+          body: step4Data,
+          theme: 'striped',
+          styles: { fontSize: 9, cellPadding: 2 },
+          columnStyles: {
+            0: { fontStyle: 'bold', cellWidth: 50 },
+          },
+          margin: { left: margin, right: margin },
+        });
+        yPos = (doc as any).lastAutoTable.finalY + 5;
+      } else {
+        doc.setFontSize(9);
+        doc.text('No data recorded', margin, yPos);
+        yPos += 8;
+      }
+
+      // Add images for step 4
+      for (const fv of step4Fields) {
+        if (this.isImageField(fv)) {
+          const images = this.getImageUrls(fv);
+          if (images.length > 0) {
+            checkPageBreak(50);
+            doc.setFontSize(9);
+            doc.setFont('helvetica', 'bold');
+            doc.text(fv.fieldConfig?.fieldLabel || 'Images', margin, yPos);
+            yPos += 5;
+
+            let xPos = margin;
+            for (const img of images) {
+              const base64 = await loadImageAsBase64(img.key);
+              if (base64) {
+                checkPageBreak(45);
+                try {
+                  doc.addImage(base64, 'JPEG', xPos, yPos, 40, 35);
+                  xPos += 45;
+                  if (xPos + 40 > pageWidth - margin) {
+                    xPos = margin;
+                    yPos += 40;
+                  }
+                } catch {
+                  // Skip if image can't be added
+                }
+              }
+            }
+            yPos += 45;
+          }
+        }
+      }
+
+      // ========== WEIGHT SUMMARY ==========
+      checkPageBreak(50);
+      doc.setFillColor(245, 158, 11); // Amber
+      doc.rect(margin, yPos, pageWidth - margin * 2, 8, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
+      doc.text('WEIGHT SUMMARY', margin + 3, yPos + 5.5);
+      yPos += 12;
+      doc.setTextColor(0, 0, 0);
+
+      const grossWeight = Number(this.getGrnFieldValue('gross_weight')) || 0;
+      const tareWeight = Number(this.getGrnFieldValue('tare_weight')) || 0;
+      const netWeight = this.grn.netWeight || this.calculateNetWeight();
+
+      const weightData = [
+        ['Gross Weight', `${grossWeight} kg`],
+        ['Tare Weight', `${tareWeight} kg`],
+        ['Net Weight', `${netWeight} kg`],
+      ];
+
+      autoTable(doc, {
+        startY: yPos,
+        head: [],
+        body: weightData,
+        theme: 'grid',
+        styles: { fontSize: 11, cellPadding: 4, halign: 'center' },
+        columnStyles: {
+          0: { fontStyle: 'bold', fillColor: [240, 240, 240] },
+          1: { fontStyle: 'bold', textColor: [16, 185, 129] },
+        },
+        margin: { left: margin, right: margin },
+      });
+
+      yPos = (doc as any).lastAutoTable.finalY + 15;
+
+      // ========== FOOTER ==========
+      checkPageBreak(30);
+      doc.setDrawColor(200, 200, 200);
+      doc.line(margin, yPos, pageWidth - margin, yPos);
+      yPos += 8;
+
+      doc.setFontSize(9);
+      doc.setTextColor(100, 100, 100);
+      doc.text('This document is a comprehensive review of all GRN steps.', pageWidth / 2, yPos, {
+        align: 'center',
+      });
+      yPos += 5;
+      doc.text('Please verify all information before approval.', pageWidth / 2, yPos, {
+        align: 'center',
+      });
+
+      // Add page numbers
+      const totalPages = doc.getNumberOfPages();
+      for (let i = 1; i <= totalPages; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(150, 150, 150);
+        doc.text(`Page ${i} of ${totalPages}`, pageWidth / 2, pageHeight - 10, { align: 'center' });
+      }
+
+      // Open PDF in new tab
+      const pdfBlob = doc.output('blob');
+      const pdfUrl = URL.createObjectURL(pdfBlob);
+      window.open(pdfUrl, '_blank');
+
+      this.loading = false;
+      this.toastService.showSuccess('Success', 'PDF generated and opened in new tab');
+    } catch (error) {
+      this.loading = false;
+      console.error('Error generating PDF:', error);
+      this.toastService.showError('Error', 'Failed to generate PDF');
+    }
   }
 }

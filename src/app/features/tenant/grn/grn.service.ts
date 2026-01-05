@@ -89,4 +89,13 @@ export class GrnService {
     formData.append('file', file);
     return this.http.post<ApiResponse<{ url: string }>>(`${environment.apiUrl}/uploads`, formData);
   }
+
+  /**
+   * Get file as base64 from backend (bypasses CORS for PDF generation)
+   */
+  getFileAsBase64(key: string): Observable<ApiResponse<{ base64: string; contentType: string }>> {
+    return this.http.get<ApiResponse<{ base64: string; contentType: string }>>(
+      `${environment.apiUrl}/uploads/base64/${encodeURIComponent(key)}`
+    );
+  }
 }

@@ -447,7 +447,17 @@
         <!-- Step 5: Summary and Approval -->
         @if (currentStep === 5) {
         <div class="review-section">
-          <h3 class="section-title"><i class="pi pi-list"></i> GRN Summary</h3>
+          <div class="section-header-with-action">
+            <h3 class="section-title"><i class="pi pi-list"></i> GRN Summary</h3>
+            <p-button
+              label="Review in PDF"
+              icon="pi pi-file-pdf"
+              severity="info"
+              [outlined]="true"
+              (click)="generateReviewPDF()"
+              [loading]="loading"
+            ></p-button>
+          </div>
 
           <!-- Summary Cards -->
           <div class="summary-cards">
