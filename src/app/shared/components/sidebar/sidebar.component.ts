@@ -163,6 +163,18 @@ export class SidebarComponent implements OnInit, OnDestroy {
           route: '/admin/rfid-cards',
           // No permission check for now - new module
         },
+        {
+          label: 'Weighbridge',
+          icon: 'pi pi-server',
+          route: '/weighbridge',
+          permission: `${ModuleCode.Weighbridge}:${OperationCode.List}`,
+        },
+        {
+          label: 'Camera',
+          icon: 'pi pi-video',
+          route: '/camera',
+          permission: `${ModuleCode.Camera}:${OperationCode.List}`,
+        },
       ];
 
       this.menuItems = tenantMenuItems.filter((item) => {

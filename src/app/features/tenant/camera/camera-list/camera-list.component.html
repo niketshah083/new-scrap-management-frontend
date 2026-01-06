@@ -1,0 +1,163 @@
+<div class="list-page">
+  <div class="page-header">
+    <h1><i class="pi pi-video"></i> Cameras</h1>
+    <div class="header-actions">
+      <p-button label="Add Camera" icon="pi pi-plus" (click)="openForm()"></p-button>
+    </div>
+  </div>
+
+  <div class="table-card">
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+      <div class="search-input">
+        <i class="pi pi-search"></i>
+        <input
+          type="text"
+          placeholder="Search cameras..."
+          [(ngModel)]="searchTerm"
+          (input)="onSearch()"
+        />
+      </div>
+      <div class="filter-select">
+        <p-select
+          [options]="statusOptions"
+          [(ngModel)]="selectedStatus"
+          (onChange)="onFilter()"
+          placeholder="All Status"
+          [showClear]="true"
+          appendTo="body"
+        ></p-select>
+      </div>
+    </div>
+
+    <!-- Stats Row -->
+    <div class="stats-row">
+      <div class="stat-item">
+        <div class="stat-icon blue"><i class="pi pi-video"></i></div>
+        <div class="stat-info">
+          <div class="stat-value">{{ totalCount }}</div>
+          <div class="stat-label">Total Cameras</div>
+        </div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-icon green"><i class="pi pi-check-circle"></i></div>
+        <div class="stat-info">
+          <div class="stat-value">{{ activeCount }}</div>
+          <div class="stat-label">Active</div>
+        </div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-icon orange"><i class="pi pi-ban"></i></div>
+        <div class="stat-info">
+          <div class="stat-value">{{ inactiveCount }}</div>
+          <div class="stat-label">Inactive</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <p-table
+      [value]="filteredCameras"
+      [loading]="loading"
+      [paginator]="true"
+      [rows]="10"
+      [rowsPerPageOptions]="[10, 25, 50]"
+      [showCurrentPageReport]="true"
+      currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Name</th>
+          <th>Code</th>
+          <th class="hide-mobile">Location</th>
+          <th class="hide-mobile">Type</th>
+          <th>Status</th>
+          <th style="width: 180px">Actions</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-camera>
+        <tr>
+          <td>
+            <span class="cell-primary">{{ camera.name }}</span>
+          </td>
+          <td>
+            <span class="cell-link">{{ camera.code }}</span>
+          </td>
+          <td class="hide-mobile">
+            <span class="cell-muted">{{ camera.location || '-' }}</span>
+          </td>
+          <td class="hide-mobile">
+            <p-tag [value]="camera.cameraType" severity="info"></p-tag>
+          </td>
+          <td>
+            <p-tag
+              [value]="camera.isActive ? 'Active' : 'Inactive'"
+              [severity]="camera.isActive ? 'success' : 'danger'"
+            ></p-tag>
+          </td>
+          <td>
+            <div class="action-buttons">
+              <p-button
+                icon="pi pi-pencil"
+                [rounded]="true"
+                [text]="true"
+                severity="info"
+                pTooltip="Edit"
+                (click)="openForm(camera)"
+              ></p-button>
+              <p-button
+                icon="pi pi-cog"
+                [rounded]="true"
+                [text]="true"
+                severity="secondary"
+                pTooltip="Configure"
+                (click)="openConfig(camera)"
+              ></p-button>
+              <p-button
+                icon="pi pi-eye"
+                [rounded]="true"
+                [text]="true"
+                severity="success"
+                pTooltip="Preview"
+                (click)="openPreview(camera)"
+              ></p-button>
+              <p-button
+                icon="pi pi-trash"
+                [rounded]="true"
+                [text]="true"
+                severity="danger"
+                pTooltip="Delete"
+                (click)="confirmDelete(camera)"
+              ></p-button>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="6">
+            <div class="empty-state">
+              <i class="pi pi-video"></i>
+              <h4>No Cameras Found</h4>
+              <p>Add your first camera to get started</p>
+              <p-button label="Add Camera" icon="pi pi-plus" (click)="openForm()"></p-button>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+</div>
+
+<p-dialog
+  [(visible)]="formVisible"
+  [header]="editingCamera ? 'Edit Camera' : 'Add Camera'"
+  [modal]="true"
+  [style]="{ width: '450px' }"
+>
+  <app-camera-form
+    [camera]="editingCamera"
+    (save)="onSave($event)"
+    (cancel)="closeForm()"
+  ></app-camera-form>
+</p-dialog>

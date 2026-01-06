@@ -16,6 +16,7 @@ import {
   FormsModule,
 } from '@angular/forms';
 import { Subscription } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
 import { Button } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { InputNumber } from 'primeng/inputnumber';
@@ -38,6 +39,11 @@ import { ToastService } from '../../../../core/services/toast.service';
 import { SelectComponent } from '../../../../shared/components/select/select.component';
 import { FileUploadComponent } from '../../../../shared/components/file-upload/file-upload.component';
 import { environment } from '../../../../../environments/environment';
+import {
+  DeviceBridgeService,
+  WeightUpdate,
+  CameraSnapshotUpdate,
+} from '../../../../core/services/device-bridge.service';
 
 @Component({
   selector: 'app-grn-wizard',
@@ -90,6 +96,13 @@ export class GrnWizardComponent implements OnInit, OnDestroy {
   rfidScanInput: string = '';
   assigningRfidCard = false;
 
+  // Device Bridge integration
+  private weightUpdateSub?: Subscription;
+  private cameraSnapshotSub?: Subscription;
+  deviceBridgeConnected = false;
+  lastWeightUpdate: WeightUpdate | null = null;
+  lastCameraSnapshot: CameraSnapshotUpdate | null = null;
+
   steps = [
     { label: 'Gate Entry', step: 1 },
     { label: 'Initial Weighing', step: 2 },
@@ -109,7 +122,9 @@ export class GrnWizardComponent implements OnInit, OnDestroy {
     private vendorService: VendorService,
     private gatePassService: GatePassService,
     private rfidService: RFIDService,
-    private toastService: ToastService
+    private toastService: ToastService,
+    private deviceBridgeService: DeviceBridgeService,
+    private http: HttpClient
   ) {
     this.dynamicForm = this.fb.group({});
   }
@@ -119,6 +134,7 @@ export class GrnWizardComponent implements OnInit, OnDestroy {
     this.loadPurchaseOrders();
     this.loadVendors();
     this.loadAvailableRfidCards();
+    this.setupDeviceBridge();
 
     // Subscribe to route param changes to handle step navigation
     this.routeSub = this.route.paramMap.subscribe((params) => {
@@ -147,6 +163,8 @@ export class GrnWizardComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.routeSub?.unsubscribe();
+    this.weightUpdateSub?.unsubscribe();
+    this.cameraSnapshotSub?.unsubscribe();
   }
 
   private initForm(): void {
@@ -165,6 +183,170 @@ export class GrnWizardComponent implements OnInit, OnDestroy {
     this.form.get('purchaseOrderId')?.valueChanges.subscribe((poId) => {
       this.onPOChange(poId);
     });
+  }
+
+  /**
+   * Setup Device Bridge connection for receiving weight and camera data from Electron app
+   */
+  private setupDeviceBridge(): void {
+    // Connect to device bridge socket
+    this.deviceBridgeService.connect();
+
+    // Subscribe to connection status
+    this.deviceBridgeService.connectionStatus$.subscribe((connected) => {
+      this.deviceBridgeConnected = connected;
+      if (connected) {
+        console.log('[GRN Wizard] Device Bridge connected');
+      }
+    });
+
+    // Subscribe to weight updates - auto-fill weight fields on step 2 or 4
+    this.weightUpdateSub = this.deviceBridgeService.weightUpdates$.subscribe((update) => {
+      console.log('[GRN Wizard] Weight update received:', update);
+      this.lastWeightUpdate = update;
+      this.handleWeightUpdate(update);
+    });
+
+    // Subscribe to camera snapshots - auto-fill image fields
+    this.cameraSnapshotSub = this.deviceBridgeService.cameraSnapshots$.subscribe((snapshot) => {
+      console.log('[GRN Wizard] Camera snapshot received:', snapshot);
+      this.lastCameraSnapshot = snapshot;
+      this.handleCameraSnapshot(snapshot);
+    });
+  }
+
+  /**
+   * Handle weight update from device bridge
+   * Auto-fills the weight field based on current step
+   */
+  private handleWeightUpdate(update: WeightUpdate): void {
+    // Only process if we're on step 2 (gross weight) or step 4 (tare weight)
+    if (this.currentStep === 2) {
+      // Step 2: Initial Weighing - fill gross_weight
+      const grossWeightControl = this.dynamicForm.get('gross_weight');
+      if (grossWeightControl) {
+        grossWeightControl.setValue(Math.round(update.weight * 100) / 100);
+        this.toastService.showSuccess(
+          'Weight Received',
+          `Gross weight: ${update.weight.toFixed(2)} ${update.unit} from ${update.weighbridgeName}`
+        );
+      }
+    } else if (this.currentStep === 4) {
+      // Step 4: Final Weighing - fill tare_weight
+      const tareWeightControl = this.dynamicForm.get('tare_weight');
+      if (tareWeightControl) {
+        tareWeightControl.setValue(Math.round(update.weight * 100) / 100);
+        this.toastService.showSuccess(
+          'Weight Received',
+          `Tare weight: ${update.weight.toFixed(2)} ${update.unit} from ${update.weighbridgeName}`
+        );
+      }
+    }
+  }
+
+  /**
+   * Handle camera snapshot from device bridge
+   * Auto-fills the image field based on current step
+   */
+  private handleCameraSnapshot(snapshot: CameraSnapshotUpdate): void {
+    // Only process if we're on step 2 or step 4
+    if (this.currentStep === 2) {
+      // Step 2: Initial Weighing - fill gross_weight_image
+      this.setImageFieldFromSnapshot('gross_weight_image', snapshot);
+    } else if (this.currentStep === 4) {
+      // Step 4: Final Weighing - fill tare_weight_image
+      this.setImageFieldFromSnapshot('tare_weight_image', snapshot);
+    }
+  }
+
+  /**
+   * Convert base64 snapshot to file and upload it to S3, then set the key on the form field
+   */
+  private async setImageFieldFromSnapshot(
+    fieldName: string,
+    snapshot: CameraSnapshotUpdate
+  ): Promise<void> {
+    const imageControl = this.dynamicForm.get(fieldName);
+    if (!imageControl) return;
+
+    try {
+      // Convert base64 to blob/file
+      const base64Data = snapshot.imageData.includes(',')
+        ? snapshot.imageData.split(',')[1]
+        : snapshot.imageData;
+      const byteCharacters = atob(base64Data);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+
+      // Determine mime type from data URL or default to PNG
+      let mimeType = 'image/png';
+      if (snapshot.imageData.startsWith('data:')) {
+        const match = snapshot.imageData.match(/data:([^;]+);/);
+        if (match) {
+          mimeType = match[1];
+        }
+      }
+
+      const blob = new Blob([byteArray], { type: mimeType });
+      const extension = mimeType.split('/')[1] || 'png';
+      const file = new File([blob], `device_snapshot_${Date.now()}.${extension}`, {
+        type: mimeType,
+      });
+
+      // Upload to S3 via backend
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('folder', 'images');
+
+      this.http.post<any>(`${this.apiUrl}/uploads/image`, formData).subscribe({
+        next: (response) => {
+          if (response.success && response.data?.key) {
+            // Set the S3 key on the form control
+            imageControl.setValue(response.data.key);
+            this.toastService.showSuccess(
+              'Snapshot Uploaded',
+              `Image from ${snapshot.cameraName} saved successfully`
+            );
+          }
+        },
+        error: (err) => {
+          console.error('Failed to upload snapshot:', err);
+          this.toastService.showError('Upload Failed', 'Could not save the camera snapshot');
+        },
+      });
+    } catch (error) {
+      console.error('Error processing snapshot:', error);
+      this.toastService.showError('Processing Error', 'Could not process the camera snapshot');
+    }
+  }
+
+  /**
+   * Request weight reading from device bridge
+   */
+  requestWeightFromDevice(): void {
+    if (!this.deviceBridgeConnected) {
+      this.toastService.showWarning('Not Connected', 'Device Bridge is not connected');
+      return;
+    }
+    // Request from all connected weighbridges (the first one to respond will be used)
+    this.deviceBridgeService.requestWeightReading(0); // 0 means any weighbridge
+    this.toastService.showInfo('Requesting Weight', 'Waiting for weight reading from device...');
+  }
+
+  /**
+   * Request camera snapshot from device bridge
+   */
+  requestSnapshotFromDevice(): void {
+    if (!this.deviceBridgeConnected) {
+      this.toastService.showWarning('Not Connected', 'Device Bridge is not connected');
+      return;
+    }
+    // Request from all connected cameras (the first one to respond will be used)
+    this.deviceBridgeService.requestCameraSnapshot(0); // 0 means any camera
+    this.toastService.showInfo('Requesting Snapshot', 'Waiting for camera snapshot...');
   }
 
   /**
@@ -658,26 +840,26 @@ export class GrnWizardComponent implements OnInit, OnDestroy {
   }
 
   onFileSelect(event: Event, fieldName: string): void {
+    // This method is for native file inputs (not used with app-file-upload component)
+    // The app-file-upload component handles everything via formControlName
     const input = event.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
       const file = input.files[0];
-      // For now, just store the file name - in production, you'd upload to server
-      this.dynamicForm.get(fieldName)?.setValue(file.name);
       this.toastService.showSuccess('File Selected', file.name);
     }
   }
 
   onFileUploaded(file: File, fieldName: string): void {
-    // For now, just store the file name - in production, you'd upload to server
-    this.dynamicForm.get(fieldName)?.setValue(file.name);
-    this.toastService.showSuccess('File Selected', file.name);
+    // The file-upload component handles S3 upload and sets the key via formControlName
+    // This event is just for showing a toast notification
+    this.toastService.showSuccess('File Uploaded', file.name);
   }
 
   onFilesUploaded(files: File[], fieldName: string): void {
-    // For multiple files, the file-upload component already manages the list
-    // Just show a toast notification
+    // The file-upload component handles S3 upload and sets the keys via formControlName
+    // This event is just for showing a toast notification
     if (files.length > 0) {
-      this.toastService.showSuccess('Files Selected', `${files.length} file(s) added`);
+      this.toastService.showSuccess('Files Uploaded', `${files.length} file(s) uploaded`);
     }
   }
 
@@ -853,8 +1035,13 @@ export class GrnWizardComponent implements OnInit, OnDestroy {
   }
 
   getImageUrls(fieldValue: any): { key: string; url: string }[] {
-    // First check if backend provided fileUrls array
-    if (fieldValue.fileUrls && Array.isArray(fieldValue.fileUrls)) {
+    // First check if backend provided fileUrls array (signed S3 URLs)
+    if (
+      fieldValue.fileUrls &&
+      Array.isArray(fieldValue.fileUrls) &&
+      fieldValue.fileUrls.length > 0
+    ) {
+      console.log('Using backend fileUrls:', fieldValue.fileUrls);
       return fieldValue.fileUrls;
     }
 
@@ -862,15 +1049,49 @@ export class GrnWizardComponent implements OnInit, OnDestroy {
     const value = this.getFieldValue(fieldValue);
     if (!value) return [];
 
+    console.log('Parsing file keys from textValue:', value);
+
     // Handle comma-separated values for multiple files
+    // Note: These won't have valid URLs since we don't have signed URLs
+    // The user will need to reload the GRN to get fresh signed URLs
     return value
       .split(',')
       .map((v: string) => v.trim())
       .filter((v: string) => v)
       .map((key: string) => ({
         key,
-        url: `${this.apiUrl.replace('/api', '')}/uploads/${key}`,
+        // Return empty URL - the file chip will show but clicking won't work
+        // This is a fallback for when the backend didn't provide fileUrls
+        url: '',
       }));
+  }
+
+  /**
+   * Check if a file is a PDF based on its key/filename
+   */
+  isPdfFile(key: string): boolean {
+    return key.toLowerCase().endsWith('.pdf');
+  }
+
+  /**
+   * Open file preview - handles both images and PDFs
+   */
+  openFilePreview(url: string, key: string, fieldLabel: string): void {
+    if (!url) {
+      this.toastService.showWarning(
+        'File Not Available',
+        'Please reload the page to get fresh file URLs'
+      );
+      return;
+    }
+
+    if (this.isPdfFile(key)) {
+      // For PDFs, open in a new tab
+      window.open(url, '_blank');
+    } else {
+      // For images, show in the preview dialog
+      this.openImagePreview(url, fieldLabel);
+    }
   }
 
   formatFieldValue(fieldValue: any): string {
@@ -1034,6 +1255,29 @@ export class GrnWizardComponent implements OnInit, OnDestroy {
         });
       };
 
+      // Helper function to check if a base64 string is an image
+      const isImageBase64 = (base64: string): boolean => {
+        if (!base64) return false;
+        return (
+          base64.startsWith('data:image/jpeg') ||
+          base64.startsWith('data:image/png') ||
+          base64.startsWith('data:image/gif') ||
+          base64.startsWith('data:image/webp')
+        );
+      };
+
+      // Helper function to get file extension from key
+      const getFileExtension = (key: string): string => {
+        const parts = key.split('.');
+        return parts.length > 1 ? parts[parts.length - 1].toLowerCase() : '';
+      };
+
+      // Helper function to check if file is an image based on extension
+      const isImageFile = (key: string): boolean => {
+        const ext = getFileExtension(key);
+        return ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext);
+      };
+
       // ========== HEADER ==========
       doc.setFillColor(16, 185, 129); // Green color
       doc.rect(0, 0, pageWidth, 35, 'F');
@@ -1129,35 +1373,56 @@ export class GrnWizardComponent implements OnInit, OnDestroy {
 
       yPos = (doc as any).lastAutoTable.finalY + 5;
 
-      // Add images for step 1
+      // Add files/images for step 1
       for (const fv of step1Fields) {
         if (this.isImageField(fv)) {
           const images = this.getImageUrls(fv);
           if (images.length > 0) {
-            checkPageBreak(50);
+            checkPageBreak(90);
             doc.setFontSize(9);
             doc.setFont('helvetica', 'bold');
-            doc.text(fv.fieldConfig?.fieldLabel || 'Images', margin, yPos);
+            doc.text(fv.fieldConfig?.fieldLabel || 'Files', margin, yPos);
             yPos += 5;
 
             let xPos = margin;
+            let hasImages = false;
+
             for (const img of images) {
-              const base64 = await loadImageAsBase64(img.key);
-              if (base64) {
-                checkPageBreak(45);
-                try {
-                  doc.addImage(base64, 'JPEG', xPos, yPos, 40, 35);
-                  xPos += 45;
-                  if (xPos + 40 > pageWidth - margin) {
-                    xPos = margin;
-                    yPos += 40;
+              // Check if it's an image file or a document (PDF, etc.)
+              if (isImageFile(img.key)) {
+                const base64 = await loadImageAsBase64(img.key);
+                if (base64 && isImageBase64(base64)) {
+                  hasImages = true;
+                  checkPageBreak(80);
+                  try {
+                    doc.addImage(base64, 'JPEG', xPos, yPos, 80, 70);
+                    xPos += 85;
+                    if (xPos + 80 > pageWidth - margin) {
+                      xPos = margin;
+                      yPos += 75;
+                    }
+                  } catch (e) {
+                    console.warn('Failed to add image to PDF:', e);
                   }
-                } catch {
-                  // Skip if image can't be added
                 }
+              } else {
+                // For non-image files (PDF, etc.), show as text reference
+                checkPageBreak(10);
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(8);
+                doc.setTextColor(59, 130, 246); // Blue color for links
+                const fileName = img.key.split('/').pop() || img.key;
+                doc.text(`📎 ${fileName}`, margin, yPos);
+                doc.setTextColor(0, 0, 0);
+                yPos += 6;
               }
             }
-            yPos += 45;
+
+            if (hasImages) {
+              yPos += 80;
+            } else {
+              yPos += 5;
+            }
           }
         }
       }
@@ -1206,30 +1471,49 @@ export class GrnWizardComponent implements OnInit, OnDestroy {
         if (this.isImageField(fv)) {
           const images = this.getImageUrls(fv);
           if (images.length > 0) {
-            checkPageBreak(50);
+            checkPageBreak(90);
             doc.setFontSize(9);
             doc.setFont('helvetica', 'bold');
             doc.text(fv.fieldConfig?.fieldLabel || 'Images', margin, yPos);
             yPos += 5;
 
             let xPos = margin;
+            let hasImages = false;
+
             for (const img of images) {
-              const base64 = await loadImageAsBase64(img.key);
-              if (base64) {
-                checkPageBreak(45);
-                try {
-                  doc.addImage(base64, 'JPEG', xPos, yPos, 40, 35);
-                  xPos += 45;
-                  if (xPos + 40 > pageWidth - margin) {
-                    xPos = margin;
-                    yPos += 40;
+              if (isImageFile(img.key)) {
+                const base64 = await loadImageAsBase64(img.key);
+                if (base64 && isImageBase64(base64)) {
+                  hasImages = true;
+                  checkPageBreak(80);
+                  try {
+                    doc.addImage(base64, 'JPEG', xPos, yPos, 80, 70);
+                    xPos += 85;
+                    if (xPos + 80 > pageWidth - margin) {
+                      xPos = margin;
+                      yPos += 75;
+                    }
+                  } catch (e) {
+                    console.warn('Failed to add image to PDF:', e);
                   }
-                } catch {
-                  // Skip if image can't be added
                 }
+              } else {
+                checkPageBreak(10);
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(8);
+                doc.setTextColor(59, 130, 246);
+                const fileName = img.key.split('/').pop() || img.key;
+                doc.text(`📎 ${fileName}`, margin, yPos);
+                doc.setTextColor(0, 0, 0);
+                yPos += 6;
               }
             }
-            yPos += 45;
+
+            if (hasImages) {
+              yPos += 80;
+            } else {
+              yPos += 5;
+            }
           }
         }
       }
@@ -1278,30 +1562,49 @@ export class GrnWizardComponent implements OnInit, OnDestroy {
         if (this.isImageField(fv)) {
           const images = this.getImageUrls(fv);
           if (images.length > 0) {
-            checkPageBreak(50);
+            checkPageBreak(90);
             doc.setFontSize(9);
             doc.setFont('helvetica', 'bold');
             doc.text(fv.fieldConfig?.fieldLabel || 'Images', margin, yPos);
             yPos += 5;
 
             let xPos = margin;
+            let hasImages = false;
+
             for (const img of images) {
-              const base64 = await loadImageAsBase64(img.key);
-              if (base64) {
-                checkPageBreak(45);
-                try {
-                  doc.addImage(base64, 'JPEG', xPos, yPos, 40, 35);
-                  xPos += 45;
-                  if (xPos + 40 > pageWidth - margin) {
-                    xPos = margin;
-                    yPos += 40;
+              if (isImageFile(img.key)) {
+                const base64 = await loadImageAsBase64(img.key);
+                if (base64 && isImageBase64(base64)) {
+                  hasImages = true;
+                  checkPageBreak(80);
+                  try {
+                    doc.addImage(base64, 'JPEG', xPos, yPos, 80, 70);
+                    xPos += 85;
+                    if (xPos + 80 > pageWidth - margin) {
+                      xPos = margin;
+                      yPos += 75;
+                    }
+                  } catch (e) {
+                    console.warn('Failed to add image to PDF:', e);
                   }
-                } catch {
-                  // Skip if image can't be added
                 }
+              } else {
+                checkPageBreak(10);
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(8);
+                doc.setTextColor(59, 130, 246);
+                const fileName = img.key.split('/').pop() || img.key;
+                doc.text(`📎 ${fileName}`, margin, yPos);
+                doc.setTextColor(0, 0, 0);
+                yPos += 6;
               }
             }
-            yPos += 45;
+
+            if (hasImages) {
+              yPos += 80;
+            } else {
+              yPos += 5;
+            }
           }
         }
       }
@@ -1359,30 +1662,49 @@ export class GrnWizardComponent implements OnInit, OnDestroy {
         if (this.isImageField(fv)) {
           const images = this.getImageUrls(fv);
           if (images.length > 0) {
-            checkPageBreak(50);
+            checkPageBreak(90);
             doc.setFontSize(9);
             doc.setFont('helvetica', 'bold');
             doc.text(fv.fieldConfig?.fieldLabel || 'Images', margin, yPos);
             yPos += 5;
 
             let xPos = margin;
+            let hasImages = false;
+
             for (const img of images) {
-              const base64 = await loadImageAsBase64(img.key);
-              if (base64) {
-                checkPageBreak(45);
-                try {
-                  doc.addImage(base64, 'JPEG', xPos, yPos, 40, 35);
-                  xPos += 45;
-                  if (xPos + 40 > pageWidth - margin) {
-                    xPos = margin;
-                    yPos += 40;
+              if (isImageFile(img.key)) {
+                const base64 = await loadImageAsBase64(img.key);
+                if (base64 && isImageBase64(base64)) {
+                  hasImages = true;
+                  checkPageBreak(80);
+                  try {
+                    doc.addImage(base64, 'JPEG', xPos, yPos, 80, 70);
+                    xPos += 85;
+                    if (xPos + 80 > pageWidth - margin) {
+                      xPos = margin;
+                      yPos += 75;
+                    }
+                  } catch (e) {
+                    console.warn('Failed to add image to PDF:', e);
                   }
-                } catch {
-                  // Skip if image can't be added
                 }
+              } else {
+                checkPageBreak(10);
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(8);
+                doc.setTextColor(59, 130, 246);
+                const fileName = img.key.split('/').pop() || img.key;
+                doc.text(`📎 ${fileName}`, margin, yPos);
+                doc.setTextColor(0, 0, 0);
+                yPos += 6;
               }
             }
-            yPos += 45;
+
+            if (hasImages) {
+              yPos += 80;
+            } else {
+              yPos += 5;
+            }
           }
         }
       }

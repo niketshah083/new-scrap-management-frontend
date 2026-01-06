@@ -489,9 +489,12 @@
                     @for (img of getImageUrls(fv); track img.key) {
                     <span
                       class="image-chip"
-                      (click)="openImagePreview(img.url, fv.fieldConfig?.fieldLabel || 'Image')"
+                      (click)="
+                        openFilePreview(img.url, img.key, fv.fieldConfig?.fieldLabel || 'File')
+                      "
                     >
-                      <i class="pi pi-image"></i> {{ img.key }}
+                      <i [class]="isPdfFile(img.key) ? 'pi pi-file-pdf' : 'pi pi-image'"></i>
+                      {{ img.key.split('/').pop() }}
                     </span>
                     }
                   </div>
@@ -522,9 +525,12 @@
                     @for (img of getImageUrls(fv); track img.key) {
                     <span
                       class="image-chip"
-                      (click)="openImagePreview(img.url, fv.fieldConfig?.fieldLabel || 'Image')"
+                      (click)="
+                        openFilePreview(img.url, img.key, fv.fieldConfig?.fieldLabel || 'File')
+                      "
                     >
-                      <i class="pi pi-image"></i> {{ img.key }}
+                      <i [class]="isPdfFile(img.key) ? 'pi pi-file-pdf' : 'pi pi-image'"></i>
+                      {{ img.key.split('/').pop() }}
                     </span>
                     }
                   </div>
@@ -559,9 +565,12 @@
                     @for (img of getImageUrls(fv); track img.key) {
                     <span
                       class="image-chip"
-                      (click)="openImagePreview(img.url, fv.fieldConfig?.fieldLabel || 'Image')"
+                      (click)="
+                        openFilePreview(img.url, img.key, fv.fieldConfig?.fieldLabel || 'File')
+                      "
                     >
-                      <i class="pi pi-image"></i> {{ img.key }}
+                      <i [class]="isPdfFile(img.key) ? 'pi pi-file-pdf' : 'pi pi-image'"></i>
+                      {{ img.key.split('/').pop() }}
                     </span>
                     }
                   </div>
@@ -594,9 +603,12 @@
                     @for (img of getImageUrls(fv); track img.key) {
                     <span
                       class="image-chip"
-                      (click)="openImagePreview(img.url, fv.fieldConfig?.fieldLabel || 'Image')"
+                      (click)="
+                        openFilePreview(img.url, img.key, fv.fieldConfig?.fieldLabel || 'File')
+                      "
                     >
-                      <i class="pi pi-image"></i> {{ img.key }}
+                      <i [class]="isPdfFile(img.key) ? 'pi pi-file-pdf' : 'pi pi-image'"></i>
+                      {{ img.key.split('/').pop() }}
                     </span>
                     }
                   </div>

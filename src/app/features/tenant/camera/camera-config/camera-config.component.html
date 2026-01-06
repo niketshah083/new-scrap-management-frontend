@@ -1,0 +1,133 @@
+<div class="config-page">
+  <div class="page-header">
+    <div class="header-left">
+      <p-button icon="pi pi-arrow-left" [text]="true" (click)="goBack()"></p-button>
+      <h1>
+        <i class="pi pi-cog"></i>
+        Configure Camera @if (cameraMaster) {
+        <span class="subtitle">{{ cameraMaster.name }} ({{ cameraMaster.code }})</span>
+        }
+      </h1>
+    </div>
+  </div>
+
+  @if (loading) {
+  <div class="loading-state">
+    <i class="pi pi-spin pi-spinner"></i>
+    <p>Loading configuration...</p>
+  </div>
+  } @else {
+  <form [formGroup]="form" (ngSubmit)="onSubmit()">
+    <div class="config-sections">
+      <!-- Connection Settings -->
+      <p-card header="Connection Settings">
+        <div class="form-grid">
+          <div class="form-field full-width">
+            <label for="rtspUrl">RTSP URL</label>
+            <input
+              pInputText
+              id="rtspUrl"
+              formControlName="rtspUrl"
+              placeholder="rtsp://192.168.1.100:554/stream"
+            />
+            @if (form.get('rtspUrl')?.invalid && form.get('rtspUrl')?.touched) {
+            <small class="error-text">Invalid RTSP URL format</small>
+            }
+            <small class="hint-text">RTSP stream URL for capturing snapshots</small>
+          </div>
+          <div class="form-field full-width">
+            <label for="streamUrl">Stream URL (for live preview)</label>
+            <input
+              pInputText
+              id="streamUrl"
+              formControlName="streamUrl"
+              placeholder="http://192.168.1.100:8080/stream"
+            />
+            <small class="hint-text">HTTP stream URL for live preview in browser</small>
+          </div>
+          <div class="form-field">
+            <label for="username">Username</label>
+            <input pInputText id="username" formControlName="username" placeholder="admin" />
+          </div>
+          <div class="form-field">
+            <label for="password">Password</label>
+            <p-password
+              id="password"
+              formControlName="password"
+              [feedback]="false"
+              [toggleMask]="true"
+              placeholder="Enter password"
+            ></p-password>
+            @if (existingConfig) {
+            <small class="hint-text">Leave empty to keep existing password</small>
+            }
+          </div>
+          <div class="form-field">
+            <label for="transport">Transport Protocol</label>
+            <p-select
+              id="transport"
+              [options]="transportOptions"
+              formControlName="transport"
+              placeholder="Select transport"
+              appendTo="body"
+            ></p-select>
+          </div>
+          <div class="form-field">
+            <label for="timeout">Connection Timeout (ms)</label>
+            <p-inputNumber
+              id="timeout"
+              formControlName="timeout"
+              [min]="1000"
+              [max]="60000"
+            ></p-inputNumber>
+          </div>
+        </div>
+      </p-card>
+
+      <!-- Snapshot Settings -->
+      <p-card header="Snapshot Settings">
+        <div class="form-grid">
+          <div class="form-field">
+            <label for="snapshotWidth">Width (px)</label>
+            <p-inputNumber
+              id="snapshotWidth"
+              formControlName="snapshotWidth"
+              [min]="320"
+              [max]="4096"
+            ></p-inputNumber>
+          </div>
+          <div class="form-field">
+            <label for="snapshotHeight">Height (px)</label>
+            <p-inputNumber
+              id="snapshotHeight"
+              formControlName="snapshotHeight"
+              [min]="240"
+              [max]="2160"
+            ></p-inputNumber>
+          </div>
+          <div class="form-field">
+            <label for="snapshotQuality">Quality (1-100)</label>
+            <p-inputNumber
+              id="snapshotQuality"
+              formControlName="snapshotQuality"
+              [min]="1"
+              [max]="100"
+            ></p-inputNumber>
+            <small class="hint-text">JPEG compression quality</small>
+          </div>
+        </div>
+      </p-card>
+    </div>
+
+    <div class="form-actions">
+      <p-button label="Cancel" severity="secondary" [text]="true" (click)="goBack()"></p-button>
+      <p-button
+        type="submit"
+        [label]="existingConfig ? 'Update Configuration' : 'Save Configuration'"
+        [loading]="saving"
+        [disabled]="form.invalid"
+      ></p-button>
+    </div>
+  </form>
+  }
+</div>

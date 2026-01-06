@@ -1,0 +1,73 @@
+<div class="preview-page" [class.fullscreen]="isFullscreen">
+  <div class="page-header">
+    <div class="header-left">
+      <p-button icon="pi pi-arrow-left" [text]="true" (click)="goBack()"></p-button>
+      <h1>
+        <i class="pi pi-video"></i>
+        Camera Preview @if (cameraMaster) {
+        <span class="subtitle">{{ cameraMaster.name }} ({{ cameraMaster.code }})</span>
+        }
+      </h1>
+    </div>
+    <div class="header-actions">
+      <p-button
+        [icon]="isFullscreen ? 'pi pi-window-minimize' : 'pi pi-window-maximize'"
+        [text]="true"
+        pTooltip="Toggle Fullscreen"
+        (click)="toggleFullscreen()"
+      ></p-button>
+      <p-button icon="pi pi-camera" label="Capture Snapshot" (click)="captureSnapshot()"></p-button>
+    </div>
+  </div>
+
+  @if (loading) {
+  <div class="loading-state">
+    <i class="pi pi-spin pi-spinner"></i>
+    <p>Loading camera...</p>
+  </div>
+  } @else {
+  <div class="preview-container">
+    <p-card>
+      <div class="video-container">
+        @if (currentFrame) {
+        <img [src]="currentFrame" alt="Camera preview" class="preview-image" />
+        } @else if (cameraConfig && cameraConfig.streamUrl) {
+        <img [src]="cameraConfig.streamUrl" alt="Camera stream" class="preview-image" />
+        } @else {
+        <div class="no-preview">
+          <i class="pi pi-video"></i>
+          <h4>No Preview Available</h4>
+          <p>Configure the camera stream URL to enable live preview</p>
+          <p-button
+            label="Configure Camera"
+            icon="pi pi-cog"
+            (click)="router.navigate(['/camera/config', cameraMaster?.id])"
+          ></p-button>
+        </div>
+        }
+      </div>
+      <div class="preview-info">
+        @if (cameraMaster) {
+        <div class="info-item">
+          <span class="label">Camera:</span>
+          <span class="value">{{ cameraMaster.name }}</span>
+        </div>
+        <div class="info-item">
+          <span class="label">Location:</span>
+          <span class="value">{{ cameraMaster.location || 'Not specified' }}</span>
+        </div>
+        <div class="info-item">
+          <span class="label">Type:</span>
+          <span class="value">{{ cameraMaster.cameraType }}</span>
+        </div>
+        } @if (lastUpdated) {
+        <div class="info-item">
+          <span class="label">Last Updated:</span>
+          <span class="value">{{ lastUpdated | date : 'medium' }}</span>
+        </div>
+        }
+      </div>
+    </p-card>
+  </div>
+  }
+</div>

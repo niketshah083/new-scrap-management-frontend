@@ -1,0 +1,181 @@
+<div class="config-page">
+  <div class="page-header">
+    <div class="header-left">
+      <p-button icon="pi pi-arrow-left" [text]="true" (click)="goBack()"></p-button>
+      <h1>
+        <i class="pi pi-cog"></i>
+        Configure Weighbridge @if (weighbridgeMaster) {
+        <span class="subtitle">{{ weighbridgeMaster.name }} ({{ weighbridgeMaster.code }})</span>
+        }
+      </h1>
+    </div>
+  </div>
+
+  @if (loading) {
+  <div class="loading-state">
+    <i class="pi pi-spin pi-spinner"></i>
+    <p>Loading configuration...</p>
+  </div>
+  } @else {
+  <form [formGroup]="form" (ngSubmit)="onSubmit()">
+    <div class="config-sections">
+      <!-- Serial Port Settings -->
+      <p-card header="Serial Port Settings">
+        <div class="form-grid">
+          <div class="form-field">
+            <label for="serialPort">Serial Port *</label>
+            <input
+              pInputText
+              id="serialPort"
+              formControlName="serialPort"
+              placeholder="e.g., COM1 or /dev/ttyUSB0"
+            />
+            @if (form.get('serialPort')?.invalid && form.get('serialPort')?.touched) {
+            <small class="error-text">Serial port is required</small>
+            }
+          </div>
+          <div class="form-field">
+            <label for="baudRate">Baud Rate *</label>
+            <p-select
+              id="baudRate"
+              [options]="baudRateOptions"
+              formControlName="baudRate"
+              placeholder="Select baud rate"
+              appendTo="body"
+            ></p-select>
+          </div>
+          <div class="form-field">
+            <label for="dataBits">Data Bits *</label>
+            <p-select
+              id="dataBits"
+              [options]="dataBitsOptions"
+              formControlName="dataBits"
+              placeholder="Select data bits"
+              appendTo="body"
+            ></p-select>
+          </div>
+          <div class="form-field">
+            <label for="stopBits">Stop Bits *</label>
+            <p-select
+              id="stopBits"
+              [options]="stopBitsOptions"
+              formControlName="stopBits"
+              placeholder="Select stop bits"
+              appendTo="body"
+            ></p-select>
+          </div>
+          <div class="form-field">
+            <label for="parity">Parity *</label>
+            <p-select
+              id="parity"
+              [options]="parityOptions"
+              formControlName="parity"
+              placeholder="Select parity"
+              appendTo="body"
+            ></p-select>
+          </div>
+        </div>
+      </p-card>
+
+      <!-- Weight Parsing Settings -->
+      <p-card header="Weight Parsing Settings">
+        <div class="form-grid">
+          <div class="form-field">
+            <label for="weightRegex">Weight Regex Pattern</label>
+            <input
+              pInputText
+              id="weightRegex"
+              formControlName="weightRegex"
+              placeholder="e.g., \\d+\\.?\\d*"
+            />
+            <small class="hint-text">Regular expression to extract weight value</small>
+          </div>
+          <div class="form-field">
+            <label for="weightStartMarker">Start Marker</label>
+            <input
+              pInputText
+              id="weightStartMarker"
+              formControlName="weightStartMarker"
+              placeholder="e.g., ST"
+            />
+          </div>
+          <div class="form-field">
+            <label for="weightEndMarker">End Marker</label>
+            <input
+              pInputText
+              id="weightEndMarker"
+              formControlName="weightEndMarker"
+              placeholder="e.g., kg"
+            />
+          </div>
+          <div class="form-field">
+            <label for="weightMultiplier">Weight Multiplier</label>
+            <p-inputNumber
+              id="weightMultiplier"
+              formControlName="weightMultiplier"
+              [minFractionDigits]="0"
+              [maxFractionDigits]="4"
+            ></p-inputNumber>
+          </div>
+          <div class="form-field">
+            <label for="weightUnit">Weight Unit</label>
+            <p-select
+              id="weightUnit"
+              [options]="weightUnitOptions"
+              formControlName="weightUnit"
+              placeholder="Select unit"
+              appendTo="body"
+            ></p-select>
+          </div>
+        </div>
+      </p-card>
+
+      <!-- Stability Settings -->
+      <p-card header="Stability Settings">
+        <div class="form-grid">
+          <div class="form-field">
+            <label for="pollingInterval">Polling Interval (ms)</label>
+            <p-inputNumber
+              id="pollingInterval"
+              formControlName="pollingInterval"
+              [min]="100"
+              [max]="10000"
+            ></p-inputNumber>
+            <small class="hint-text">How often to read from the serial port</small>
+          </div>
+          <div class="form-field">
+            <label for="stableReadings">Stable Readings Required</label>
+            <p-inputNumber
+              id="stableReadings"
+              formControlName="stableReadings"
+              [min]="1"
+              [max]="10"
+            ></p-inputNumber>
+            <small class="hint-text">Number of consistent readings before weight is stable</small>
+          </div>
+          <div class="form-field">
+            <label for="stabilityThreshold">Stability Threshold</label>
+            <p-inputNumber
+              id="stabilityThreshold"
+              formControlName="stabilityThreshold"
+              [minFractionDigits]="1"
+              [maxFractionDigits]="2"
+            ></p-inputNumber>
+            <small class="hint-text">Maximum variance between readings</small>
+          </div>
+        </div>
+      </p-card>
+    </div>
+
+    <div class="form-actions">
+      <p-button label="Cancel" severity="secondary" [text]="true" (click)="goBack()"></p-button>
+      <p-button
+        type="submit"
+        [label]="existingConfig ? 'Update Configuration' : 'Save Configuration'"
+        [loading]="saving"
+        [disabled]="form.invalid"
+      ></p-button>
+    </div>
+  </form>
+  }
+</div>

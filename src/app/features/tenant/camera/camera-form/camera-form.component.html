@@ -1,0 +1,56 @@
+<form [formGroup]="form" (ngSubmit)="onSubmit()">
+  <div class="form-fields">
+    <div class="form-field">
+      <label for="name">Name *</label>
+      <input pInputText id="name" formControlName="name" placeholder="Enter camera name" />
+      @if (form.get('name')?.invalid && form.get('name')?.touched) {
+      <small class="error-text">Name is required</small>
+      }
+    </div>
+    <div class="form-field">
+      <label for="code">Code *</label>
+      <input
+        pInputText
+        id="code"
+        formControlName="code"
+        placeholder="Enter code (e.g., CAM-001)"
+        [readonly]="!!camera"
+      />
+      @if (form.get('code')?.invalid && form.get('code')?.touched) {
+      <small class="error-text">Code is required</small>
+      }
+    </div>
+    <div class="form-field">
+      <label for="cameraType">Camera Type</label>
+      <p-select
+        id="cameraType"
+        [options]="cameraTypeOptions"
+        formControlName="cameraType"
+        placeholder="Select camera type"
+        appendTo="body"
+      ></p-select>
+    </div>
+    <div class="form-field">
+      <label for="location">Location</label>
+      <input pInputText id="location" formControlName="location" placeholder="Enter location" />
+    </div>
+    <div class="form-field">
+      <label for="description">Description</label>
+      <textarea
+        pTextarea
+        id="description"
+        formControlName="description"
+        placeholder="Enter description"
+        rows="3"
+      ></textarea>
+    </div>
+  </div>
+  <div class="form-actions">
+    <p-button label="Cancel" severity="secondary" [text]="true" (click)="onCancel()"></p-button>
+    <p-button
+      type="submit"
+      [label]="camera ? 'Update' : 'Create'"
+      [disabled]="form.invalid"
+    ></p-button>
+  </div>
+</form>

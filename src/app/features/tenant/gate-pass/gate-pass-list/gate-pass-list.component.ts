@@ -60,7 +60,7 @@ export class GatePassListComponent implements OnInit {
   }
 
   get activeCount(): number {
-    return this.gatePasses.filter((g) => g.status === 'active').length;
+    return this.gatePasses.filter((g) => g.status === 'active' && !this.isExpired(g)).length;
   }
 
   get usedCount(): number {
@@ -135,6 +135,14 @@ export class GatePassListComponent implements OnInit {
 
   isExpired(gatePass: GatePass): boolean {
     return new Date(gatePass.expiresAt) < new Date();
+  }
+
+  getDisplayStatus(gatePass: GatePass): string {
+    // If status is active but expired, show as expired
+    if (gatePass.status === 'active' && this.isExpired(gatePass)) {
+      return 'expired';
+    }
+    return gatePass.status;
   }
 
   markAsUsed(gatePass: GatePass): void {

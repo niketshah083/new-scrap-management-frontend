@@ -107,6 +107,18 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'weighbridge',
+        loadChildren: () =>
+          import('./features/tenant/weighbridge/weighbridge.routes').then(
+            (m) => m.WEIGHBRIDGE_ROUTES
+          ),
+      },
+      {
+        path: 'camera',
+        loadChildren: () =>
+          import('./features/tenant/camera/camera.routes').then((m) => m.CAMERA_ROUTES),
+      },
+      {
         path: '',
         redirectTo: 'dashboard',
         pathMatch: 'full',
