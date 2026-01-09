@@ -13,6 +13,7 @@ import { ToastService } from '../../../core/services/toast.service';
  * Add this component to your main layout to enable RFID scanning from anywhere.
  * When a card is scanned:
  * - If card is assigned to a GRN, navigates to that GRN
+ * - If card is assigned to a DO Processing, navigates to that DO Processing
  * - If card is not assigned, shows a notification
  */
 @Component({
@@ -42,7 +43,7 @@ import { ToastService } from '../../../core/services/toast.service';
           />
           <button class="scan-btn" (click)="submitManualScan()" [disabled]="!manualCardNumber">
             <i class="pi pi-search"></i>
-            Find GRN
+            Find Record
           </button>
         </div>
       </div>
@@ -255,16 +256,23 @@ export class RFIDListenerComponent implements OnInit, OnDestroy {
         setTimeout(() => (this.isScanning = false), 500);
 
         if (res.success && res.data) {
-          const { card, grn } = res.data;
+          const { card, grn, doProcessing } = res.data;
 
           if (grn) {
             this.toastService.showSuccess('RFID Scan', `Opening GRN ${grn.grnNumber}`);
             // Navigate to GRN at current step
             this.router.navigate(['/grn', grn.id, 'step', grn.currentStep]);
+          } else if (doProcessing) {
+            this.toastService.showSuccess(
+              'RFID Scan',
+              `Opening DO Processing ${doProcessing.doNumber}`
+            );
+            // Navigate to DO Processing detail
+            this.router.navigate(['/delivery-orders/processing', doProcessing.id]);
           } else {
             this.toastService.showInfo(
               'RFID Scan',
-              `Card ${card.label || card.cardNumber} is not assigned to any GRN`
+              `Card ${card.label || card.cardNumber} is not assigned to any GRN or DO`
             );
           }
         }

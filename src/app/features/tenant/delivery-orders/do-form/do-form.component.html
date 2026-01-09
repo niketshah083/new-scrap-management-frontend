@@ -1,0 +1,162 @@
+<div class="do-form">
+  <div class="page-header">
+    <h1>{{ isEdit ? 'Edit Delivery Order' : 'Create Delivery Order' }}</h1>
+  </div>
+
+  <form [formGroup]="form" (ngSubmit)="onSubmit()">
+    <p-card header="Basic Details">
+      <div class="form-grid">
+        <div class="form-field">
+          <label for="doNumber">D.O. Number *</label>
+          <input
+            pInputText
+            id="doNumber"
+            formControlName="doNumber"
+            placeholder="Enter DO number"
+          />
+        </div>
+        <div class="form-field">
+          <app-select
+            id="vendorId"
+            formControlName="vendorId"
+            [options]="vendors"
+            label="Vendor"
+            optionLabel="companyName"
+            optionValue="id"
+            placeholder="Select vendor"
+            [required]="true"
+          ></app-select>
+        </div>
+        <div class="form-field">
+          <label for="doDate">D.O. Date *</label>
+          <p-datepicker
+            id="doDate"
+            formControlName="doDate"
+            [showIcon]="true"
+            dateFormat="yy-mm-dd"
+            appendTo="body"
+          ></p-datepicker>
+        </div>
+      </div>
+    </p-card>
+
+    <p-card header="Weigh Bridge Details" styleClass="mt-4">
+      <div class="form-grid">
+        <div class="form-field">
+          <label for="vehicleNo">Vehicle No</label>
+          <input
+            pInputText
+            id="vehicleNo"
+            formControlName="vehicleNo"
+            placeholder="Enter vehicle number"
+          />
+        </div>
+        <div class="form-field">
+          <label for="grossWeight">Gross Weight (kg)</label>
+          <p-inputnumber
+            id="grossWeight"
+            formControlName="grossWeight"
+            [min]="0"
+            [minFractionDigits]="2"
+            [maxFractionDigits]="2"
+            (onBlur)="calculateNetWeight()"
+            styleClass="w-full"
+          ></p-inputnumber>
+        </div>
+        <div class="form-field">
+          <label for="tareWeight">Tare Weight (kg)</label>
+          <p-inputnumber
+            id="tareWeight"
+            formControlName="tareWeight"
+            [min]="0"
+            [minFractionDigits]="2"
+            [maxFractionDigits]="2"
+            (onBlur)="calculateNetWeight()"
+            styleClass="w-full"
+          ></p-inputnumber>
+        </div>
+        <div class="form-field">
+          <label for="netWeight">Net Weight (kg)</label>
+          <p-inputnumber
+            id="netWeight"
+            formControlName="netWeight"
+            [min]="0"
+            [minFractionDigits]="2"
+            [maxFractionDigits]="2"
+            styleClass="w-full"
+          ></p-inputnumber>
+        </div>
+      </div>
+    </p-card>
+
+    <p-card header="Item Details" styleClass="mt-4">
+      <div class="items-table" formArrayName="items">
+        <div class="items-header">
+          <span>Material</span>
+          <span>WB Net Wt. (kg)</span>
+          <span>Quantity</span>
+          <span>Rate</span>
+          <span></span>
+        </div>
+        @for (item of items.controls; track $index; let i = $index) {
+        <div class="item-row" [formGroupName]="i">
+          <app-select
+            formControlName="materialId"
+            [options]="materials"
+            optionLabel="name"
+            optionValue="id"
+            placeholder="Select material"
+          ></app-select>
+          <p-inputnumber
+            formControlName="wbNetWeight"
+            [min]="0"
+            [minFractionDigits]="2"
+            [maxFractionDigits]="2"
+            styleClass="w-full"
+          ></p-inputnumber>
+          <p-inputnumber
+            formControlName="quantity"
+            [min]="0.01"
+            styleClass="w-full"
+          ></p-inputnumber>
+          <p-inputnumber
+            formControlName="rate"
+            mode="currency"
+            currency="INR"
+            [min]="0"
+            styleClass="w-full"
+          ></p-inputnumber>
+          <p-button
+            icon="pi pi-trash"
+            [rounded]="true"
+            [text]="true"
+            severity="danger"
+            (click)="removeItem(i)"
+            [disabled]="items.length === 1"
+          ></p-button>
+        </div>
+        }
+        <p-button label="Add Item" icon="pi pi-plus" [text]="true" (click)="addItem()"></p-button>
+      </div>
+    </p-card>
+
+    <p-card header="Totals" styleClass="mt-4">
+      <div class="form-grid">
+        <div class="form-field full-width">
+          <label for="remarks">Remarks</label>
+          <textarea pInputTextarea id="remarks" formControlName="remarks" rows="3"></textarea>
+        </div>
+      </div>
+    </p-card>
+
+    <div class="form-actions">
+      <p-button label="Cancel" severity="secondary" [text]="true" (click)="cancel()"></p-button>
+      <p-button
+        type="submit"
+        [label]="isEdit ? 'Update' : 'Create'"
+        [loading]="loading"
+        [disabled]="form.invalid"
+      ></p-button>
+    </div>
+  </form>
+</div>

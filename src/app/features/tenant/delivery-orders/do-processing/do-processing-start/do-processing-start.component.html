@@ -1,0 +1,304 @@
+<div class="start-processing-page">
+  <div class="page-header">
+    <h1><i class="pi pi-play"></i> Start DO Processing</h1>
+    @if (!showDoSelection && selectedDO) {
+    <p-button
+      label="Change DO"
+      icon="pi pi-arrow-left"
+      severity="secondary"
+      [text]="true"
+      (click)="backToSelection()"
+    >
+    </p-button>
+    }
+  </div>
+
+  @if (showDoSelection) {
+  <!-- DO Selection Screen -->
+  <div class="content-grid">
+    <!-- Left: DO Selection -->
+    <p-card header="Select Delivery Order" class="selection-card">
+      <div class="search-box">
+        <i class="pi pi-search"></i>
+        <input
+          type="text"
+          placeholder="Search by DO number or vendor..."
+          [(ngModel)]="searchTerm"
+          (input)="onSearch()"
+        />
+      </div>
+
+      <div class="do-list" [class.loading]="loading">
+        @if (loading) {
+        <div class="loading-state">
+          <i class="pi pi-spin pi-spinner"></i>
+          <span>Loading delivery orders...</span>
+        </div>
+        } @else if (filteredDOs.length === 0) {
+        <div class="empty-state">
+          <i class="pi pi-inbox"></i>
+          <span>No delivery orders found</span>
+        </div>
+        } @else { @for (dOrder of filteredDOs; track dOrder.id) {
+        <div
+          class="do-item"
+          [class.selected]="selectedDO?.id === dOrder.id"
+          (click)="selectDO(dOrder)"
+        >
+          <div class="do-header">
+            <span class="do-number">{{ dOrder.doNumber }}</span>
+            <span class="do-date">{{ dOrder.doDate | date : 'mediumDate' }}</span>
+          </div>
+          <div class="do-vendor">
+            {{ dOrder.vendor?.companyName || dOrder.vendorName || 'Unknown Vendor' }}
+          </div>
+          <div class="do-meta">
+            <span><i class="pi pi-box"></i> {{ dOrder.items?.length || 0 }} items</span>
+            <span
+              ><i class="pi pi-dollar"></i>
+              {{ dOrder.totalAmount | currency : 'INR' : 'symbol' : '1.0-0' }}</span
+            >
+          </div>
+        </div>
+        } }
+      </div>
+    </p-card>
+
+    <!-- Right: Selected DO Details & Form -->
+    <div class="details-section">
+      @if (selectedDO) {
+      <p-card header="Selected DO Details">
+        <div class="do-details">
+          <div class="detail-row">
+            <span class="label">DO Number:</span>
+            <span class="value">{{ selectedDO.doNumber }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Vendor:</span>
+            <span class="value">{{
+              selectedDO.vendor?.companyName || selectedDO.vendorName || '-'
+            }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">DO Date:</span>
+            <span class="value">{{ selectedDO.doDate | date : 'mediumDate' }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Total Amount:</span>
+            <span class="value">{{ selectedDO.totalAmount | currency : 'INR' }}</span>
+          </div>
+        </div>
+
+        <h4>Items to Load ({{ selectedDO.items?.length || 0 }})</h4>
+        <div class="items-list">
+          @for (item of selectedDO.items; track item.id) {
+          <div class="item-row">
+            <div class="item-info">
+              <span class="item-name">{{
+                item.material?.name || item.materialName || 'Unknown Material'
+              }}</span>
+              <span class="item-code">{{ item.material?.code || '' }}</span>
+            </div>
+            <div class="item-qty">
+              {{ item.quantity | number : '1.2-2' }} {{ item.material?.unitOfMeasure || 'units' }}
+            </div>
+          </div>
+          }
+        </div>
+      </p-card>
+
+      <p-card header="Truck & Driver Details" class="mt-4">
+        <form [formGroup]="form">
+          <div class="form-grid">
+            <div class="form-field">
+              <label for="vehicleNo">Vehicle Number *</label>
+              <input
+                pInputText
+                id="vehicleNo"
+                formControlName="vehicleNo"
+                placeholder="Enter vehicle number"
+              />
+              @if (form.get('vehicleNo')?.touched && form.get('vehicleNo')?.invalid) {
+              <small class="error">Vehicle number is required</small>
+              }
+            </div>
+            <div class="form-field">
+              <label for="driverName">Driver Name</label>
+              <input
+                pInputText
+                id="driverName"
+                formControlName="driverName"
+                placeholder="Enter driver name"
+              />
+            </div>
+            <div class="form-field">
+              <label for="driverPhone">Driver Phone</label>
+              <input
+                pInputText
+                id="driverPhone"
+                formControlName="driverPhone"
+                placeholder="Enter driver phone"
+              />
+            </div>
+            <div class="form-field full-width">
+              <label for="remarks">Remarks</label>
+              <input
+                pInputText
+                id="remarks"
+                formControlName="remarks"
+                placeholder="Any remarks..."
+              />
+            </div>
+          </div>
+        </form>
+      </p-card>
+
+      <div class="form-actions">
+        <p-button label="Cancel" severity="secondary" [text]="true" (click)="cancel()"></p-button>
+        <p-button
+          label="Clear Selection"
+          severity="warn"
+          [text]="true"
+          (click)="clearSelection()"
+        ></p-button>
+        <p-button
+          label="Start Processing"
+          icon="pi pi-play"
+          [loading]="submitting"
+          [disabled]="form.invalid"
+          (click)="startProcessing()"
+        ></p-button>
+      </div>
+      } @else {
+      <div class="no-selection">
+        <i class="pi pi-arrow-left"></i>
+        <h3>Select a Delivery Order</h3>
+        <p>Choose a delivery order from the list to start processing</p>
+      </div>
+      }
+    </div>
+  </div>
+  } @else {
+  <!-- Direct Processing Form (when DO is pre-selected) -->
+  <div class="direct-processing">
+    @if (loading) {
+    <div class="loading-state">
+      <i class="pi pi-spin pi-spinner"></i>
+      <span>Loading delivery order...</span>
+    </div>
+    } @else if (selectedDO) {
+    <div class="processing-grid">
+      <!-- DO Details Card -->
+      <p-card header="Delivery Order Details" class="do-details-card">
+        <div class="do-summary">
+          <div class="summary-header">
+            <h3>{{ selectedDO.doNumber }}</h3>
+            <span class="do-date">{{ selectedDO.doDate | date : 'mediumDate' }}</span>
+          </div>
+          <div class="summary-info">
+            <div class="info-item">
+              <span class="label">Vendor:</span>
+              <span class="value">{{
+                selectedDO.vendor?.companyName || selectedDO.vendorName || '-'
+              }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">Total Amount:</span>
+              <span class="value">{{ selectedDO.totalAmount | currency : 'INR' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">Items:</span>
+              <span class="value">{{ selectedDO.items?.length || 0 }} items</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="items-preview">
+          <h4>Items to Load</h4>
+          <div class="items-grid">
+            @for (item of selectedDO.items; track item.id) {
+            <div class="item-card">
+              <div class="item-name">
+                {{ item.material?.name || item.materialName || 'Unknown Material' }}
+              </div>
+              <div class="item-qty">
+                {{ item.quantity | number : '1.2-2' }} {{ item.material?.unitOfMeasure || 'units' }}
+              </div>
+            </div>
+            }
+          </div>
+        </div>
+      </p-card>
+
+      <!-- Processing Form -->
+      <p-card header="Start Processing" class="processing-form-card">
+        <form [formGroup]="form">
+          <div class="form-fields">
+            <div class="form-field">
+              <label for="vehicleNo">Vehicle Number *</label>
+              <input
+                pInputText
+                id="vehicleNo"
+                formControlName="vehicleNo"
+                placeholder="Enter vehicle number"
+                class="large-input"
+              />
+              @if (form.get('vehicleNo')?.touched && form.get('vehicleNo')?.invalid) {
+              <small class="error">Vehicle number is required</small>
+              }
+            </div>
+
+            <div class="form-field">
+              <label for="driverName">Driver Name</label>
+              <input
+                pInputText
+                id="driverName"
+                formControlName="driverName"
+                placeholder="Enter driver name"
+                class="large-input"
+              />
+            </div>
+
+            <div class="form-field">
+              <label for="driverPhone">Driver Phone</label>
+              <input
+                pInputText
+                id="driverPhone"
+                formControlName="driverPhone"
+                placeholder="Enter driver phone"
+                class="large-input"
+              />
+            </div>
+
+            <div class="form-field">
+              <label for="remarks">Remarks</label>
+              <input
+                pInputText
+                id="remarks"
+                formControlName="remarks"
+                placeholder="Any remarks..."
+                class="large-input"
+              />
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <p-button label="Cancel" severity="secondary" [text]="true" (click)="cancel()">
+            </p-button>
+            <p-button
+              label="Start Processing"
+              icon="pi pi-play"
+              [loading]="submitting"
+              [disabled]="form.invalid"
+              (click)="startProcessing()"
+              size="large"
+            >
+            </p-button>
+          </div>
+        </form>
+      </p-card>
+    </div>
+    }
+  </div>
+  }
+</div>

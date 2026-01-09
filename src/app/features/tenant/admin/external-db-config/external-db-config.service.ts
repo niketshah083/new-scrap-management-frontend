@@ -19,10 +19,27 @@ export interface ExternalDbConfig {
   externalDbVendorTable: string | null;
   externalDbPoTable: string | null;
   externalDbMaterialTable: string | null;
+  externalDbDeliveryOrderTable: string | null;
+  externalDbDeliveryOrderItemTable: string | null;
+  externalDbTransporterTable: string | null;
+  externalDbDoItemRelationKey: string | null;
   externalDbCacheTtl: number | null;
   externalDbVendorMappings: FieldMapping[] | null;
   externalDbPoMappings: FieldMapping[] | null;
   externalDbMaterialMappings: FieldMapping[] | null;
+  externalDbDeliveryOrderMappings: FieldMapping[] | null;
+  externalDbDeliveryOrderItemMappings: FieldMapping[] | null;
+  externalDbTransporterMappings: FieldMapping[] | null;
+  // Vendor join configuration for DO
+  externalDbDoVendorTable: string | null;
+  externalDbDoVendorFk: string | null;
+  externalDbDoVendorPk: string | null;
+  externalDbDoVendorNameField: string | null;
+  // Material join configuration for DO items
+  externalDbDoItemMaterialTable: string | null;
+  externalDbDoItemMaterialFk: string | null;
+  externalDbDoItemMaterialPk: string | null;
+  externalDbDoItemMaterialNameField: string | null;
   hasPassword: boolean;
 }
 
@@ -36,10 +53,27 @@ export interface UpdateExternalDbConfigRequest {
   externalDbVendorTable?: string;
   externalDbPoTable?: string;
   externalDbMaterialTable?: string;
+  externalDbDeliveryOrderTable?: string;
+  externalDbDeliveryOrderItemTable?: string;
+  externalDbTransporterTable?: string;
+  externalDbDoItemRelationKey?: string;
   externalDbCacheTtl?: number;
   externalDbVendorMappings?: FieldMapping[];
   externalDbPoMappings?: FieldMapping[];
   externalDbMaterialMappings?: FieldMapping[];
+  externalDbDeliveryOrderMappings?: FieldMapping[];
+  externalDbDeliveryOrderItemMappings?: FieldMapping[];
+  externalDbTransporterMappings?: FieldMapping[];
+  // Vendor join configuration for DO
+  externalDbDoVendorTable?: string;
+  externalDbDoVendorFk?: string;
+  externalDbDoVendorPk?: string;
+  externalDbDoVendorNameField?: string;
+  // Material join configuration for DO items
+  externalDbDoItemMaterialTable?: string;
+  externalDbDoItemMaterialFk?: string;
+  externalDbDoItemMaterialPk?: string;
+  externalDbDoItemMaterialNameField?: string;
 }
 
 export interface ConnectionTestResult {

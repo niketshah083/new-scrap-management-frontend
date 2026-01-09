@@ -134,6 +134,12 @@ export class SidebarComponent implements OnInit, OnDestroy {
           permission: `${ModuleCode.PurchaseOrder}:${OperationCode.List}`,
         },
         {
+          label: 'Delivery Orders',
+          icon: 'pi pi-truck',
+          route: '/delivery-orders',
+          permission: `${ModuleCode.DeliveryOrder}:${OperationCode.List}`,
+        },
+        {
           label: 'Users',
           icon: 'pi pi-user',
           route: '/users',
@@ -174,6 +180,12 @@ export class SidebarComponent implements OnInit, OnDestroy {
           icon: 'pi pi-video',
           route: '/camera',
           permission: `${ModuleCode.Camera}:${OperationCode.List}`,
+        },
+        {
+          label: 'Transporters',
+          icon: 'pi pi-truck',
+          route: '/transporters',
+          permission: `${ModuleCode.Transporter}:${OperationCode.List}`,
         },
       ];
 

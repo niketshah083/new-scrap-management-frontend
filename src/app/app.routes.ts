@@ -62,6 +62,13 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'delivery-orders',
+        loadChildren: () =>
+          import('./features/tenant/delivery-orders/delivery-orders.routes').then(
+            (m) => m.DELIVERY_ORDERS_ROUTES
+          ),
+      },
+      {
         path: 'grn',
         loadChildren: () => import('./features/tenant/grn/grn.routes').then((m) => m.GRN_ROUTES),
       },
@@ -117,6 +124,13 @@ export const routes: Routes = [
         path: 'camera',
         loadChildren: () =>
           import('./features/tenant/camera/camera.routes').then((m) => m.CAMERA_ROUTES),
+      },
+      {
+        path: 'transporters',
+        loadComponent: () =>
+          import('./features/tenant/transporters/transporter-list/transporter-list.component').then(
+            (m) => m.TransporterListComponent
+          ),
       },
       {
         path: '',

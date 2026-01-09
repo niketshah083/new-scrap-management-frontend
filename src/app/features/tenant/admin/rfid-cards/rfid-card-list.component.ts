@@ -57,7 +57,7 @@ import { SelectComponent } from '../../../../shared/components/select/select.com
               <th>Card Number</th>
               <th>Label</th>
               <th>Status</th>
-              <th>Assigned GRN</th>
+              <th>Assigned To</th>
               <th>Last Scanned</th>
               <th style="width: 150px">Actions</th>
             </tr>
@@ -71,7 +71,7 @@ import { SelectComponent } from '../../../../shared/components/select/select.com
               <td>
                 <p-tag [value]="card.status" [severity]="getStatusSeverity(card.status)"></p-tag>
               </td>
-              <td>{{ card.grnId ? 'GRN #' + card.grnId : '-' }}</td>
+              <td>{{ getAssignedTo(card) }}</td>
               <td>{{ card.lastScannedAt ? (card.lastScannedAt | date : 'short') : 'Never' }}</td>
               <td>
                 <div class="action-buttons">
@@ -311,6 +311,16 @@ export class RfidCardListComponent implements OnInit {
       default:
         return 'secondary';
     }
+  }
+
+  getAssignedTo(card: RFIDCard): string {
+    if (card.grnId) {
+      return `GRN #${card.grnId}`;
+    }
+    if (card.doProcessingId) {
+      return `DO #${card.doProcessingId}`;
+    }
+    return '-';
   }
 
   openCreateDialog(): void {

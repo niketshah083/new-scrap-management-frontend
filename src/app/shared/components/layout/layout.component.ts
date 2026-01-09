@@ -1,6 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet } from '@angular/router';
+import { Toast } from 'primeng/toast';
+import { ConfirmDialog } from 'primeng/confirmdialog';
 import { SidebarComponent } from '../sidebar/sidebar.component';
 import { HeaderComponent } from '../header/header.component';
 import { NotificationPanelComponent } from '../notification-panel/notification-panel.component';
@@ -22,6 +24,8 @@ export interface MenuItem {
   imports: [
     CommonModule,
     RouterOutlet,
+    Toast,
+    ConfirmDialog,
     SidebarComponent,
     HeaderComponent,
     NotificationPanelComponent,

@@ -1,0 +1,141 @@
+<div class="list-page">
+  <div class="page-header">
+    <h1><i class="pi pi-truck"></i> Delivery Orders</h1>
+    <div class="header-actions">
+      <p-button
+        label="DO Processing"
+        icon="pi pi-cog"
+        severity="secondary"
+        (click)="goToProcessing()"
+      ></p-button>
+      <p-button label="Create DO" icon="pi pi-plus" (click)="createNew()"></p-button>
+    </div>
+  </div>
+
+  <div class="table-card">
+    <div class="filter-bar">
+      <div class="search-input">
+        <i class="pi pi-search"></i>
+        <input
+          type="text"
+          placeholder="Search by DO number, vendor or vehicle..."
+          [(ngModel)]="searchTerm"
+          (input)="onSearch()"
+        />
+      </div>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-item">
+        <div class="stat-icon blue"><i class="pi pi-truck"></i></div>
+        <div class="stat-info">
+          <div class="stat-value">{{ totalCount }}</div>
+          <div class="stat-label">Total DOs</div>
+        </div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-icon purple"><i class="pi pi-dollar"></i></div>
+        <div class="stat-info">
+          <div class="stat-value">{{ totalAmount | currency : 'INR' : 'symbol' : '1.0-0' }}</div>
+          <div class="stat-label">Total Value</div>
+        </div>
+      </div>
+    </div>
+
+    <p-table
+      [value]="filteredDOs"
+      [loading]="loading"
+      [paginator]="true"
+      [rows]="10"
+      [rowsPerPageOptions]="[10, 25, 50]"
+      [showCurrentPageReport]="true"
+      currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th>DO Number</th>
+          <th>Vendor</th>
+          <th class="hide-mobile">DO Date</th>
+          <th class="hide-mobile">Vehicle No</th>
+          <th class="hide-mobile">Net Weight</th>
+          <th>Total Amount</th>
+          <th>Processing Status</th>
+          <th style="width: 120px">Actions</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-dOrder>
+        <tr>
+          <td>
+            <span class="cell-link" (click)="editDO(dOrder)">{{ dOrder.doNumber }}</span>
+          </td>
+          <td>
+            <span class="cell-primary">{{
+              dOrder.vendor?.companyName || dOrder.vendorName || '-'
+            }}</span>
+          </td>
+          <td class="hide-mobile">
+            <span class="cell-muted">{{ dOrder.doDate | date : 'mediumDate' }}</span>
+          </td>
+          <td class="hide-mobile">
+            <span class="cell-muted">{{ dOrder.vehicleNo || '-' }}</span>
+          </td>
+          <td class="hide-mobile">
+            <span class="cell-muted">{{
+              dOrder.netWeight ? (dOrder.netWeight | number : '1.2-2') + ' kg' : '-'
+            }}</span>
+          </td>
+          <td>
+            <span class="cell-primary">{{ dOrder.totalAmount | currency : 'INR' }}</span>
+          </td>
+          <td>
+            <p-tag
+              [severity]="getProcessingStatusSeverity(dOrder)"
+              [value]="getProcessingStatusLabel(dOrder)"
+            >
+            </p-tag>
+          </td>
+          <td>
+            <div class="action-buttons">
+              <p-button
+                [icon]="getProcessingButtonIcon(dOrder)"
+                [rounded]="true"
+                [text]="true"
+                [severity]="getProcessingButtonSeverity(dOrder)"
+                [pTooltip]="getProcessingButtonLabel(dOrder)"
+                (click)="handleProcessingAction(dOrder)"
+              ></p-button>
+              <p-button
+                icon="pi pi-pencil"
+                [rounded]="true"
+                [text]="true"
+                severity="info"
+                pTooltip="Edit"
+                (click)="editDO(dOrder)"
+              ></p-button>
+              <p-button
+                icon="pi pi-trash"
+                [rounded]="true"
+                [text]="true"
+                severity="danger"
+                pTooltip="Delete"
+                (click)="confirmDelete(dOrder)"
+              ></p-button>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="8">
+            <div class="empty-state">
+              <i class="pi pi-truck"></i>
+              <h4>No Delivery Orders Found</h4>
+              <p>Create your first delivery order to get started</p>
+              <p-button label="Create DO" icon="pi pi-plus" (click)="createNew()"></p-button>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+</div>

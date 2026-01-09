@@ -4,6 +4,8 @@ export enum ModuleCode {
   Vendor = 'Vendor',
   Material = 'Material',
   PurchaseOrder = 'PurchaseOrder',
+  DeliveryOrder = 'DeliveryOrder',
+  DoProcessing = 'DoProcessing',
   GRN = 'GRN',
   GRNFieldConfig = 'GRNFieldConfig',
   QC = 'QC',
@@ -22,6 +24,7 @@ export enum ModuleCode {
   RFID = 'RFID',
   Weighbridge = 'Weighbridge',
   Camera = 'Camera',
+  Transporter = 'Transporter',
 }
 
 export const ModuleDefinitions: Record<ModuleCode, { name: string; description: string }> = {
@@ -31,6 +34,14 @@ export const ModuleDefinitions: Record<ModuleCode, { name: string; description: 
   [ModuleCode.PurchaseOrder]: {
     name: 'Purchase Orders',
     description: 'Purchase order management',
+  },
+  [ModuleCode.DeliveryOrder]: {
+    name: 'Delivery Orders',
+    description: 'Delivery order management',
+  },
+  [ModuleCode.DoProcessing]: {
+    name: 'DO Processing',
+    description: 'Delivery order processing and weighing',
   },
   [ModuleCode.GRN]: { name: 'GRN', description: 'Goods Receipt Note management' },
   [ModuleCode.GRNFieldConfig]: {
@@ -64,5 +75,9 @@ export const ModuleDefinitions: Record<ModuleCode, { name: string; description: 
   [ModuleCode.Camera]: {
     name: 'Camera',
     description: 'Camera device management and configuration',
+  },
+  [ModuleCode.Transporter]: {
+    name: 'Transporters',
+    description: 'Transporter management',
   },
 };

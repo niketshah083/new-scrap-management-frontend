@@ -200,6 +200,156 @@ import { SelectComponent } from '../../../../shared/components/select/select.com
                 placeholder="materials"
               />
             </div>
+            <div class="form-field">
+              <label for="externalDbDeliveryOrderTable">Delivery Order Table</label>
+              <input
+                pInputText
+                id="externalDbDeliveryOrderTable"
+                formControlName="externalDbDeliveryOrderTable"
+                placeholder="delivery_orders"
+              />
+            </div>
+            <div class="form-field">
+              <label for="externalDbDeliveryOrderItemTable">Delivery Order Item Table</label>
+              <input
+                pInputText
+                id="externalDbDeliveryOrderItemTable"
+                formControlName="externalDbDeliveryOrderItemTable"
+                placeholder="delivery_order_items"
+              />
+            </div>
+            <div class="form-field">
+              <label for="externalDbTransporterTable">Transporter Table</label>
+              <input
+                pInputText
+                id="externalDbTransporterTable"
+                formControlName="externalDbTransporterTable"
+                placeholder="transporters"
+              />
+            </div>
+            <div class="form-field">
+              <label for="externalDbDoItemRelationKey">DO-Item Relation Key</label>
+              <app-select
+                formControlName="externalDbDoItemRelationKey"
+                [options]="relationKeyOptions"
+                optionLabel="label"
+                optionValue="value"
+                placeholder="Select relation key"
+              ></app-select>
+              <small class="hint">Field used to link delivery orders to their items</small>
+            </div>
+          </div>
+        </p-card>
+
+        <!-- Vendor Join Configuration for Delivery Orders -->
+        <p-card class="config-card">
+          <ng-template pTemplate="header">
+            <div class="card-header">
+              <i class="pi pi-link"></i>
+              <span>Vendor Join Configuration (for Delivery Orders)</span>
+            </div>
+          </ng-template>
+          <p class="mapping-info">
+            Configure how to join delivery orders with vendor table to get vendor names. Leave blank
+            if vendor name is directly available in DO table.
+          </p>
+          <div class="form-grid">
+            <div class="form-field">
+              <label for="externalDbDoVendorTable">Vendor Table Name</label>
+              <input
+                pInputText
+                id="externalDbDoVendorTable"
+                formControlName="externalDbDoVendorTable"
+                placeholder="e.g., acmast"
+              />
+              <small class="hint">Table containing vendor/party details</small>
+            </div>
+            <div class="form-field">
+              <label for="externalDbDoVendorFk">Foreign Key in DO Table</label>
+              <input
+                pInputText
+                id="externalDbDoVendorFk"
+                formControlName="externalDbDoVendorFk"
+                placeholder="e.g., party"
+              />
+              <small class="hint">Column in DO table that references vendor</small>
+            </div>
+            <div class="form-field">
+              <label for="externalDbDoVendorPk">Primary Key in Vendor Table</label>
+              <input
+                pInputText
+                id="externalDbDoVendorPk"
+                formControlName="externalDbDoVendorPk"
+                placeholder="e.g., id"
+              />
+              <small class="hint">Primary key column in vendor table</small>
+            </div>
+            <div class="form-field">
+              <label for="externalDbDoVendorNameField">Vendor Name Field</label>
+              <input
+                pInputText
+                id="externalDbDoVendorNameField"
+                formControlName="externalDbDoVendorNameField"
+                placeholder="e.g., acname, name"
+              />
+              <small class="hint">Column containing vendor name in vendor table</small>
+            </div>
+          </div>
+        </p-card>
+
+        <!-- Material Join Configuration for DO Items -->
+        <p-card class="config-card">
+          <ng-template pTemplate="header">
+            <div class="card-header">
+              <i class="pi pi-link"></i>
+              <span>Material Join Configuration (for DO Items)</span>
+            </div>
+          </ng-template>
+          <p class="mapping-info">
+            Configure how to join DO items with material table to get material names. Leave blank if
+            material name is directly available in items table.
+          </p>
+          <div class="form-grid">
+            <div class="form-field">
+              <label for="externalDbDoItemMaterialTable">Material Table Name</label>
+              <input
+                pInputText
+                id="externalDbDoItemMaterialTable"
+                formControlName="externalDbDoItemMaterialTable"
+                placeholder="e.g., item"
+              />
+              <small class="hint">Table containing material/item details</small>
+            </div>
+            <div class="form-field">
+              <label for="externalDbDoItemMaterialFk">Foreign Key in Items Table</label>
+              <input
+                pInputText
+                id="externalDbDoItemMaterialFk"
+                formControlName="externalDbDoItemMaterialFk"
+                placeholder="e.g., itemcode"
+              />
+              <small class="hint">Column in items table that references material</small>
+            </div>
+            <div class="form-field">
+              <label for="externalDbDoItemMaterialPk">Primary Key in Material Table</label>
+              <input
+                pInputText
+                id="externalDbDoItemMaterialPk"
+                formControlName="externalDbDoItemMaterialPk"
+                placeholder="e.g., itemcode"
+              />
+              <small class="hint">Primary key column in material table</small>
+            </div>
+            <div class="form-field">
+              <label for="externalDbDoItemMaterialNameField">Material Name Field</label>
+              <input
+                pInputText
+                id="externalDbDoItemMaterialNameField"
+                formControlName="externalDbDoItemMaterialNameField"
+                placeholder="e.g., itemname"
+              />
+              <small class="hint">Column containing material name in material table</small>
+            </div>
           </div>
         </p-card>
 
@@ -221,6 +371,9 @@ import { SelectComponent } from '../../../../shared/components/select/select.com
                 <p-tab value="0">Vendor Mappings</p-tab>
                 <p-tab value="1">PO Mappings</p-tab>
                 <p-tab value="2">Material Mappings</p-tab>
+                <p-tab value="3">DO Mappings</p-tab>
+                <p-tab value="4">DO Item Mappings</p-tab>
+                <p-tab value="5">Transporter Mappings</p-tab>
               </p-tablist>
               <p-tabpanels>
                 <p-tabpanel value="0">
@@ -412,6 +565,195 @@ import { SelectComponent } from '../../../../shared/components/select/select.com
                     </ng-template>
                   </p-table>
                 </p-tabpanel>
+                <p-tabpanel value="3">
+                  <div class="mapping-actions">
+                    <p-button
+                      label="Add Mapping"
+                      icon="pi pi-plus"
+                      size="small"
+                      (click)="addMapping('deliveryOrder')"
+                    ></p-button>
+                  </div>
+                  <p-table [value]="deliveryOrderMappings.controls" styleClass="p-datatable-sm">
+                    <ng-template pTemplate="header">
+                      <tr>
+                        <th>Internal Field</th>
+                        <th>External Field</th>
+                        <th>Transform</th>
+                        <th style="width: 80px">Actions</th>
+                      </tr>
+                    </ng-template>
+                    <ng-template pTemplate="body" let-mapping let-i="rowIndex">
+                      <tr [formGroup]="mapping">
+                        <td>
+                          <input
+                            pInputText
+                            formControlName="internalField"
+                            placeholder="e.g., doNumber"
+                          />
+                        </td>
+                        <td>
+                          <input
+                            pInputText
+                            formControlName="externalField"
+                            placeholder="e.g., do_number"
+                          />
+                        </td>
+                        <td>
+                          <app-select
+                            formControlName="transform"
+                            [options]="transformOptions"
+                            optionLabel="label"
+                            optionValue="value"
+                            placeholder="Select"
+                          ></app-select>
+                        </td>
+                        <td>
+                          <p-button
+                            icon="pi pi-trash"
+                            [rounded]="true"
+                            [text]="true"
+                            severity="danger"
+                            (click)="removeMapping('deliveryOrder', i)"
+                          ></p-button>
+                        </td>
+                      </tr>
+                    </ng-template>
+                    <ng-template pTemplate="emptymessage">
+                      <tr>
+                        <td colspan="4" class="text-center">
+                          Using default mappings. Add custom mappings to override.
+                        </td>
+                      </tr>
+                    </ng-template>
+                  </p-table>
+                </p-tabpanel>
+                <p-tabpanel value="4">
+                  <div class="mapping-actions">
+                    <p-button
+                      label="Add Mapping"
+                      icon="pi pi-plus"
+                      size="small"
+                      (click)="addMapping('deliveryOrderItem')"
+                    ></p-button>
+                  </div>
+                  <p-table [value]="deliveryOrderItemMappings.controls" styleClass="p-datatable-sm">
+                    <ng-template pTemplate="header">
+                      <tr>
+                        <th>Internal Field</th>
+                        <th>External Field</th>
+                        <th>Transform</th>
+                        <th style="width: 80px">Actions</th>
+                      </tr>
+                    </ng-template>
+                    <ng-template pTemplate="body" let-mapping let-i="rowIndex">
+                      <tr [formGroup]="mapping">
+                        <td>
+                          <input
+                            pInputText
+                            formControlName="internalField"
+                            placeholder="e.g., materialId"
+                          />
+                        </td>
+                        <td>
+                          <input
+                            pInputText
+                            formControlName="externalField"
+                            placeholder="e.g., material_id"
+                          />
+                        </td>
+                        <td>
+                          <app-select
+                            formControlName="transform"
+                            [options]="transformOptions"
+                            optionLabel="label"
+                            optionValue="value"
+                            placeholder="Select"
+                          ></app-select>
+                        </td>
+                        <td>
+                          <p-button
+                            icon="pi pi-trash"
+                            [rounded]="true"
+                            [text]="true"
+                            severity="danger"
+                            (click)="removeMapping('deliveryOrderItem', i)"
+                          ></p-button>
+                        </td>
+                      </tr>
+                    </ng-template>
+                    <ng-template pTemplate="emptymessage">
+                      <tr>
+                        <td colspan="4" class="text-center">
+                          Using default mappings. Add custom mappings to override.
+                        </td>
+                      </tr>
+                    </ng-template>
+                  </p-table>
+                </p-tabpanel>
+                <p-tabpanel value="5">
+                  <div class="mapping-actions">
+                    <p-button
+                      label="Add Mapping"
+                      icon="pi pi-plus"
+                      size="small"
+                      (click)="addMapping('transporter')"
+                    ></p-button>
+                  </div>
+                  <p-table [value]="transporterMappings.controls" styleClass="p-datatable-sm">
+                    <ng-template pTemplate="header">
+                      <tr>
+                        <th>Internal Field</th>
+                        <th>External Field</th>
+                        <th>Transform</th>
+                        <th style="width: 80px">Actions</th>
+                      </tr>
+                    </ng-template>
+                    <ng-template pTemplate="body" let-mapping let-i="rowIndex">
+                      <tr [formGroup]="mapping">
+                        <td>
+                          <input
+                            pInputText
+                            formControlName="internalField"
+                            placeholder="e.g., transporterName"
+                          />
+                        </td>
+                        <td>
+                          <input
+                            pInputText
+                            formControlName="externalField"
+                            placeholder="e.g., transporter_name"
+                          />
+                        </td>
+                        <td>
+                          <app-select
+                            formControlName="transform"
+                            [options]="transformOptions"
+                            optionLabel="label"
+                            optionValue="value"
+                            placeholder="Select"
+                          ></app-select>
+                        </td>
+                        <td>
+                          <p-button
+                            icon="pi pi-trash"
+                            [rounded]="true"
+                            [text]="true"
+                            severity="danger"
+                            (click)="removeMapping('transporter', i)"
+                          ></p-button>
+                        </td>
+                      </tr>
+                    </ng-template>
+                    <ng-template pTemplate="emptymessage">
+                      <tr>
+                        <td colspan="4" class="text-center">
+                          Using default mappings. Add custom mappings to override.
+                        </td>
+                      </tr>
+                    </ng-template>
+                  </p-table>
+                </p-tabpanel>
               </p-tabpanels>
             </p-tabs>
           </div>
@@ -563,6 +905,11 @@ export class ExternalDbConfigComponent implements OnInit {
     { label: 'Boolean', value: 'boolean' },
   ];
 
+  relationKeyOptions = [
+    { label: 'DO Number (doNumber)', value: 'doNumber' },
+    { label: 'DO ID (id)', value: 'id' },
+  ];
+
   constructor(
     private fb: FormBuilder,
     private configService: ExternalDbConfigService,
@@ -586,10 +933,27 @@ export class ExternalDbConfigComponent implements OnInit {
       externalDbVendorTable: ['vendors'],
       externalDbPoTable: ['purchase_orders'],
       externalDbMaterialTable: ['materials'],
+      externalDbDeliveryOrderTable: ['delivery_orders'],
+      externalDbDeliveryOrderItemTable: ['delivery_order_items'],
+      externalDbDoItemRelationKey: ['doNumber'],
       externalDbCacheTtl: [300],
+      // Vendor join configuration for DO
+      externalDbDoVendorTable: [''],
+      externalDbDoVendorFk: [''],
+      externalDbDoVendorPk: ['id'],
+      externalDbDoVendorNameField: [''],
+      // Material join configuration for DO items
+      externalDbDoItemMaterialTable: [''],
+      externalDbDoItemMaterialFk: [''],
+      externalDbDoItemMaterialPk: ['itemcode'],
+      externalDbDoItemMaterialNameField: [''],
       externalDbVendorMappings: this.fb.array([]),
       externalDbPoMappings: this.fb.array([]),
       externalDbMaterialMappings: this.fb.array([]),
+      externalDbDeliveryOrderMappings: this.fb.array([]),
+      externalDbDeliveryOrderItemMappings: this.fb.array([]),
+      externalDbTransporterTable: ['transporters'],
+      externalDbTransporterMappings: this.fb.array([]),
     });
   }
 
@@ -603,6 +967,18 @@ export class ExternalDbConfigComponent implements OnInit {
 
   get materialMappings(): FormArray {
     return this.form.get('externalDbMaterialMappings') as FormArray;
+  }
+
+  get deliveryOrderMappings(): FormArray {
+    return this.form.get('externalDbDeliveryOrderMappings') as FormArray;
+  }
+
+  get deliveryOrderItemMappings(): FormArray {
+    return this.form.get('externalDbDeliveryOrderItemMappings') as FormArray;
+  }
+
+  get transporterMappings(): FormArray {
+    return this.form.get('externalDbTransporterMappings') as FormArray;
   }
 
   loadConfig(): void {
@@ -633,13 +1009,31 @@ export class ExternalDbConfigComponent implements OnInit {
       externalDbVendorTable: config.externalDbVendorTable || 'vendors',
       externalDbPoTable: config.externalDbPoTable || 'purchase_orders',
       externalDbMaterialTable: config.externalDbMaterialTable || 'materials',
+      externalDbDeliveryOrderTable: config.externalDbDeliveryOrderTable || 'delivery_orders',
+      externalDbDeliveryOrderItemTable:
+        config.externalDbDeliveryOrderItemTable || 'delivery_order_items',
+      externalDbTransporterTable: config.externalDbTransporterTable || 'transporters',
+      externalDbDoItemRelationKey: config.externalDbDoItemRelationKey || 'doNumber',
       externalDbCacheTtl: config.externalDbCacheTtl || 300,
+      // Vendor join configuration for DO
+      externalDbDoVendorTable: config.externalDbDoVendorTable || '',
+      externalDbDoVendorFk: config.externalDbDoVendorFk || '',
+      externalDbDoVendorPk: config.externalDbDoVendorPk || 'id',
+      externalDbDoVendorNameField: config.externalDbDoVendorNameField || '',
+      // Material join configuration for DO items
+      externalDbDoItemMaterialTable: config.externalDbDoItemMaterialTable || '',
+      externalDbDoItemMaterialFk: config.externalDbDoItemMaterialFk || '',
+      externalDbDoItemMaterialPk: config.externalDbDoItemMaterialPk || 'itemcode',
+      externalDbDoItemMaterialNameField: config.externalDbDoItemMaterialNameField || '',
     });
 
     // Clear and repopulate mappings
     this.vendorMappings.clear();
     this.poMappings.clear();
     this.materialMappings.clear();
+    this.deliveryOrderMappings.clear();
+    this.deliveryOrderItemMappings.clear();
+    this.transporterMappings.clear();
 
     config.externalDbVendorMappings?.forEach((m) =>
       this.vendorMappings.push(this.createMappingGroup(m))
@@ -647,6 +1041,15 @@ export class ExternalDbConfigComponent implements OnInit {
     config.externalDbPoMappings?.forEach((m) => this.poMappings.push(this.createMappingGroup(m)));
     config.externalDbMaterialMappings?.forEach((m) =>
       this.materialMappings.push(this.createMappingGroup(m))
+    );
+    config.externalDbDeliveryOrderMappings?.forEach((m) =>
+      this.deliveryOrderMappings.push(this.createMappingGroup(m))
+    );
+    config.externalDbDeliveryOrderItemMappings?.forEach((m) =>
+      this.deliveryOrderItemMappings.push(this.createMappingGroup(m))
+    );
+    config.externalDbTransporterMappings?.forEach((m) =>
+      this.transporterMappings.push(this.createMappingGroup(m))
     );
   }
 
@@ -658,23 +1061,40 @@ export class ExternalDbConfigComponent implements OnInit {
     });
   }
 
-  addMapping(type: 'vendor' | 'po' | 'material'): void {
+  addMapping(
+    type: 'vendor' | 'po' | 'material' | 'deliveryOrder' | 'deliveryOrderItem' | 'transporter'
+  ): void {
     const mappings =
       type === 'vendor'
         ? this.vendorMappings
         : type === 'po'
         ? this.poMappings
-        : this.materialMappings;
+        : type === 'material'
+        ? this.materialMappings
+        : type === 'deliveryOrder'
+        ? this.deliveryOrderMappings
+        : type === 'deliveryOrderItem'
+        ? this.deliveryOrderItemMappings
+        : this.transporterMappings;
     mappings.push(this.createMappingGroup());
   }
 
-  removeMapping(type: 'vendor' | 'po' | 'material', index: number): void {
+  removeMapping(
+    type: 'vendor' | 'po' | 'material' | 'deliveryOrder' | 'deliveryOrderItem' | 'transporter',
+    index: number
+  ): void {
     const mappings =
       type === 'vendor'
         ? this.vendorMappings
         : type === 'po'
         ? this.poMappings
-        : this.materialMappings;
+        : type === 'material'
+        ? this.materialMappings
+        : type === 'deliveryOrder'
+        ? this.deliveryOrderMappings
+        : type === 'deliveryOrderItem'
+        ? this.deliveryOrderItemMappings
+        : this.transporterMappings;
     mappings.removeAt(index);
   }
 
@@ -694,7 +1114,21 @@ export class ExternalDbConfigComponent implements OnInit {
       updateData.externalDbVendorTable = formValue.externalDbVendorTable;
       updateData.externalDbPoTable = formValue.externalDbPoTable;
       updateData.externalDbMaterialTable = formValue.externalDbMaterialTable;
+      updateData.externalDbDeliveryOrderTable = formValue.externalDbDeliveryOrderTable;
+      updateData.externalDbDeliveryOrderItemTable = formValue.externalDbDeliveryOrderItemTable;
+      updateData.externalDbTransporterTable = formValue.externalDbTransporterTable;
+      updateData.externalDbDoItemRelationKey = formValue.externalDbDoItemRelationKey;
       updateData.externalDbCacheTtl = formValue.externalDbCacheTtl;
+      // Vendor join configuration for DO
+      updateData.externalDbDoVendorTable = formValue.externalDbDoVendorTable;
+      updateData.externalDbDoVendorFk = formValue.externalDbDoVendorFk;
+      updateData.externalDbDoVendorPk = formValue.externalDbDoVendorPk;
+      updateData.externalDbDoVendorNameField = formValue.externalDbDoVendorNameField;
+      // Material join configuration for DO items
+      updateData.externalDbDoItemMaterialTable = formValue.externalDbDoItemMaterialTable;
+      updateData.externalDbDoItemMaterialFk = formValue.externalDbDoItemMaterialFk;
+      updateData.externalDbDoItemMaterialPk = formValue.externalDbDoItemMaterialPk;
+      updateData.externalDbDoItemMaterialNameField = formValue.externalDbDoItemMaterialNameField;
 
       // Only include password if provided
       if (formValue.externalDbPassword) {
@@ -710,6 +1144,15 @@ export class ExternalDbConfigComponent implements OnInit {
       }
       if (this.materialMappings.length > 0) {
         updateData.externalDbMaterialMappings = this.materialMappings.value;
+      }
+      if (this.deliveryOrderMappings.length > 0) {
+        updateData.externalDbDeliveryOrderMappings = this.deliveryOrderMappings.value;
+      }
+      if (this.deliveryOrderItemMappings.length > 0) {
+        updateData.externalDbDeliveryOrderItemMappings = this.deliveryOrderItemMappings.value;
+      }
+      if (this.transporterMappings.length > 0) {
+        updateData.externalDbTransporterMappings = this.transporterMappings.value;
       }
     }
 

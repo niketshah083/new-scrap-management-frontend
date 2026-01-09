@@ -1,0 +1,192 @@
+<div class="transporter-list-page">
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header-left">
+      <h1>Transporters</h1>
+      <p>Manage transporter master data</p>
+    </div>
+    <div class="header-actions">
+      <p-button label="Add Transporter" icon="pi pi-plus" (click)="openForm()"></p-button>
+    </div>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon total">
+        <i class="pi pi-truck"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-value">{{ totalCount }}</span>
+        <span class="stat-label">Total Transporters</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon active">
+        <i class="pi pi-check-circle"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-value">{{ activeCount }}</span>
+        <span class="stat-label">Active</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon inactive">
+        <i class="pi pi-times-circle"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-value">{{ inactiveCount }}</span>
+        <span class="stat-label">Inactive</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters-section">
+    <div class="search-box">
+      <i class="pi pi-search"></i>
+      <input
+        type="text"
+        pInputText
+        [(ngModel)]="searchTerm"
+        (input)="onSearch()"
+        placeholder="Search transporters..."
+      />
+    </div>
+    <div class="filter-box">
+      <p-select
+        [options]="statusOptions"
+        [(ngModel)]="selectedStatus"
+        (onChange)="onFilter()"
+        placeholder="Filter by status"
+        [showClear]="true"
+      ></p-select>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="table-container">
+    <p-table
+      [value]="filteredTransporters"
+      [loading]="loading"
+      [paginator]="true"
+      [rows]="10"
+      [rowsPerPageOptions]="[10, 25, 50]"
+      [showCurrentPageReport]="true"
+      currentPageReportTemplate="Showing {first} to {last} of {totalRecords} transporters"
+      styleClass="p-datatable-sm"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th pSortableColumn="transporterName">
+            Name <p-sortIcon field="transporterName"></p-sortIcon>
+          </th>
+          <th pSortableColumn="gstin">GSTIN <p-sortIcon field="gstin"></p-sortIcon></th>
+          <th pSortableColumn="mobileNo">Mobile No <p-sortIcon field="mobileNo"></p-sortIcon></th>
+          <th pSortableColumn="gstState">GST State <p-sortIcon field="gstState"></p-sortIcon></th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-transporter>
+        <tr>
+          <td>{{ transporter.transporterName }}</td>
+          <td>{{ transporter.gstin || '-' }}</td>
+          <td>{{ transporter.mobileNo || '-' }}</td>
+          <td>{{ transporter.gstState || '-' }}</td>
+          <td>
+            <p-tag
+              [severity]="transporter.isActive ? 'success' : 'danger'"
+              [value]="transporter.isActive ? 'Active' : 'Inactive'"
+            ></p-tag>
+          </td>
+          <td>
+            <div class="action-buttons">
+              <p-button
+                icon="pi pi-pencil"
+                [text]="true"
+                [rounded]="true"
+                severity="info"
+                pTooltip="Edit"
+                (click)="openForm(transporter)"
+              ></p-button>
+              <p-button
+                [icon]="transporter.isActive ? 'pi pi-ban' : 'pi pi-check'"
+                [text]="true"
+                [rounded]="true"
+                [severity]="transporter.isActive ? 'warn' : 'success'"
+                [pTooltip]="transporter.isActive ? 'Deactivate' : 'Activate'"
+                (click)="toggleStatus(transporter)"
+              ></p-button>
+              <p-button
+                icon="pi pi-trash"
+                [text]="true"
+                [rounded]="true"
+                severity="danger"
+                pTooltip="Delete"
+                (click)="confirmDelete(transporter)"
+              ></p-button>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="6" class="text-center p-4">No transporters found</td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+
+  <!-- Form Dialog -->
+  <p-dialog
+    [(visible)]="formVisible"
+    [header]="editingTransporter ? 'Edit Transporter' : 'Add Transporter'"
+    [modal]="true"
+    [style]="{ width: '500px' }"
+    [closable]="true"
+    (onHide)="closeForm()"
+  >
+    <div class="form-grid">
+      <div class="form-field">
+        <label for="transporterName">Transporter Name *</label>
+        <input
+          pInputText
+          id="transporterName"
+          [(ngModel)]="formData.transporterName"
+          placeholder="Enter transporter name"
+        />
+      </div>
+      <div class="form-field">
+        <label for="gstin">GSTIN</label>
+        <input pInputText id="gstin" [(ngModel)]="formData.gstin" placeholder="Enter GSTIN" />
+      </div>
+      <div class="form-field">
+        <label for="mobileNo">Mobile No</label>
+        <input
+          pInputText
+          id="mobileNo"
+          [(ngModel)]="formData.mobileNo"
+          placeholder="Enter mobile number"
+        />
+      </div>
+      <div class="form-field">
+        <label for="gstState">GST State</label>
+        <input
+          pInputText
+          id="gstState"
+          [(ngModel)]="formData.gstState"
+          placeholder="Enter GST state"
+        />
+      </div>
+    </div>
+    <ng-template pTemplate="footer">
+      <p-button label="Cancel" [text]="true" (click)="closeForm()"></p-button>
+      <p-button
+        [label]="editingTransporter ? 'Update' : 'Create'"
+        icon="pi pi-check"
+        (click)="onSave()"
+      ></p-button>
+    </ng-template>
+  </p-dialog>
+</div>

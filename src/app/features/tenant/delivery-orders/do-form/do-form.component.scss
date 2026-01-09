@@ -1,0 +1,11 @@
+.do-form {
+  .page-header { margin-bottom: 1.5rem; h1 { font-size: 1.5rem; font-weight: 600; color: #1e293b; margin: 0; } }
+  .form-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+  .form-field { display: flex; flex-direction: column; gap: 0.5rem; &.full-width { grid-column: span 3; } label { font-weight: 500; color: #334155; } input, textarea { width: 100%; } }
+  .items-table { 
+    .items-header { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 50px; gap: 1rem; padding: 0.75rem 1rem; background: var(--surface-100); border-radius: 6px; font-weight: 600; font-size: 0.875rem; color: var(--text-color-secondary); margin-bottom: 0.5rem; } 
+    .item-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 50px; gap: 1rem; padding: 0.5rem 0; align-items: center; border-bottom: 1px solid var(--surface-200); &:last-of-type { border-bottom: none; } } 
+  }
+  .form-actions { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1.5rem; }
+}
+@media (max-width: 768px) { .do-form { .form-grid { grid-template-columns: 1fr; } .form-field.full-width { grid-column: span 1; } .items-table { .items-header { display: none; } .item-row { grid-template-columns: 1fr; gap: 0.5rem; } } } }

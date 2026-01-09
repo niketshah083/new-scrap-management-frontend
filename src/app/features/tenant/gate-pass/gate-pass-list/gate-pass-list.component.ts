@@ -68,7 +68,10 @@ export class GatePassListComponent implements OnInit {
   }
 
   get expiredCount(): number {
-    return this.gatePasses.filter((g) => g.status === 'expired' || this.isExpired(g)).length;
+    // Only count expired passes that are not used
+    return this.gatePasses.filter(
+      (g) => g.status !== 'used' && (g.status === 'expired' || this.isExpired(g))
+    ).length;
   }
 
   onFilter(): void {

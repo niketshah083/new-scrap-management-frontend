@@ -51,6 +51,7 @@ export class DeviceBridgeService implements OnDestroy {
 
   connect(): void {
     if (this.socket?.connected) {
+      console.log('Socket already connected');
       return;
     }
 
@@ -61,6 +62,7 @@ export class DeviceBridgeService implements OnDestroy {
     }
 
     const socketUrl = environment.apiUrl.replace('/api', '');
+    console.log('Connecting to device bridge at:', `${socketUrl}/device-bridge`);
 
     // Connect to the device-bridge namespace
     this.socket = io(`${socketUrl}/device-bridge`, {
@@ -86,22 +88,23 @@ export class DeviceBridgeService implements OnDestroy {
     if (!this.socket) return;
 
     this.socket.on('connect', () => {
-      console.log('Socket connected');
+      console.log('Device bridge socket connected');
       this.connectionStatus.next(true);
     });
 
     this.socket.on('disconnect', () => {
-      console.log('Socket disconnected');
+      console.log('Device bridge socket disconnected');
       this.connectionStatus.next(false);
     });
 
     this.socket.on('connect_error', (error: Error) => {
-      console.error('Socket connection error:', error);
+      console.error('Device bridge socket connection error:', error);
       this.connectionStatus.next(false);
     });
 
     // Weight updates from devices
     this.socket.on('weight:update', (data: WeightUpdate) => {
+      console.log('Weight update received:', data);
       this.weightUpdates.next({
         ...data,
         timestamp: new Date(data.timestamp),
@@ -110,6 +113,7 @@ export class DeviceBridgeService implements OnDestroy {
 
     // Camera snapshot received
     this.socket.on('camera:snapshot-received', (data: CameraSnapshotUpdate) => {
+      console.log('Camera snapshot received:', data);
       this.cameraSnapshots.next({
         ...data,
         timestamp: new Date(data.timestamp),
@@ -118,6 +122,7 @@ export class DeviceBridgeService implements OnDestroy {
 
     // Camera live frame
     this.socket.on('camera:live-frame', (data: CameraSnapshotUpdate) => {
+      console.log('Camera live frame received:', data);
       this.cameraLiveFrames.next({
         ...data,
         timestamp: new Date(data.timestamp),
@@ -126,6 +131,7 @@ export class DeviceBridgeService implements OnDestroy {
 
     // Device status changes
     this.socket.on('device:status-changed', (data: DeviceStatusUpdate) => {
+      console.log('Device status changed:', data);
       this.deviceStatus.next(data);
     });
 
