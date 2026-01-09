@@ -13,23 +13,56 @@
   </div>
 
   <div class="table-card">
+    <!-- Filter Bar -->
     <div class="filter-bar">
-      <div class="search-input">
-        <i class="pi pi-search"></i>
-        <input
-          type="text"
-          placeholder="Search by DO number, vendor or vehicle..."
-          [(ngModel)]="searchTerm"
-          (input)="onSearch()"
-        />
+      <div class="filter-row">
+        <div class="search-input">
+          <i class="pi pi-search"></i>
+          <input
+            type="text"
+            placeholder="Search by DO number, vendor or vehicle..."
+            [(ngModel)]="searchTerm"
+            (input)="onSearch()"
+          />
+        </div>
+        <div class="filter-group">
+          <p-datepicker
+            [(ngModel)]="dateRange"
+            selectionMode="range"
+            [readonlyInput]="true"
+            placeholder="Date Range"
+            dateFormat="dd/mm/yy"
+            [showClear]="true"
+            (onSelect)="onDateRangeChange()"
+            (onClear)="onDateRangeChange()"
+            styleClass="date-filter"
+          ></p-datepicker>
+          <p-select
+            [(ngModel)]="selectedStatus"
+            [options]="statusOptions"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Processing Status"
+            (onChange)="onStatusChange()"
+            styleClass="status-filter"
+          ></p-select>
+          <p-button
+            icon="pi pi-filter-slash"
+            [text]="true"
+            severity="secondary"
+            pTooltip="Clear Filters"
+            (click)="clearFilters()"
+          ></p-button>
+        </div>
       </div>
     </div>
 
+    <!-- Stats Row -->
     <div class="stats-row">
       <div class="stat-item">
         <div class="stat-icon blue"><i class="pi pi-truck"></i></div>
         <div class="stat-info">
-          <div class="stat-value">{{ totalCount }}</div>
+          <div class="stat-value">{{ totalRecords }}</div>
           <div class="stat-label">Total DOs</div>
         </div>
       </div>
@@ -37,28 +70,39 @@
         <div class="stat-icon purple"><i class="pi pi-dollar"></i></div>
         <div class="stat-info">
           <div class="stat-value">{{ totalAmount | currency : 'INR' : 'symbol' : '1.0-0' }}</div>
-          <div class="stat-label">Total Value</div>
+          <div class="stat-label">Page Total</div>
         </div>
       </div>
     </div>
 
+    <!-- Data Table with Server-Side Pagination -->
     <p-table
-      [value]="filteredDOs"
+      [value]="deliveryOrders"
       [loading]="loading"
+      [lazy]="true"
       [paginator]="true"
-      [rows]="10"
-      [rowsPerPageOptions]="[10, 25, 50]"
+      [rows]="rows"
+      [totalRecords]="totalRecords"
+      [first]="first"
+      [rowsPerPageOptions]="rowsPerPageOptions"
       [showCurrentPageReport]="true"
       currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
+      (onLazyLoad)="onLazyLoad($event)"
+      [sortField]="'doDate'"
+      [sortOrder]="-1"
     >
       <ng-template pTemplate="header">
         <tr>
-          <th>DO Number</th>
-          <th>Vendor</th>
-          <th class="hide-mobile">DO Date</th>
+          <th pSortableColumn="doNumber">DO Number <p-sortIcon field="doNumber"></p-sortIcon></th>
+          <th pSortableColumn="vendorName">Vendor <p-sortIcon field="vendorName"></p-sortIcon></th>
+          <th class="hide-mobile" pSortableColumn="doDate">
+            DO Date <p-sortIcon field="doDate"></p-sortIcon>
+          </th>
           <th class="hide-mobile">Vehicle No</th>
           <th class="hide-mobile">Net Weight</th>
-          <th>Total Amount</th>
+          <th pSortableColumn="totalAmount">
+            Total Amount <p-sortIcon field="totalAmount"></p-sortIcon>
+          </th>
           <th>Processing Status</th>
           <th style="width: 120px">Actions</th>
         </tr>

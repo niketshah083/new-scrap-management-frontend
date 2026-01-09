@@ -2,30 +2,74 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { TableModule } from 'primeng/table';
+import { TableModule, TableLazyLoadEvent } from 'primeng/table';
 import { Button } from 'primeng/button';
 import { Tooltip } from 'primeng/tooltip';
 import { Tag } from 'primeng/tag';
-import { DeliveryOrderService } from '../delivery-order.service';
+import { InputTextModule } from 'primeng/inputtext';
+import { DatePicker } from 'primeng/datepicker';
+import { Select } from 'primeng/select';
+import { DeliveryOrderService, DeliveryOrderQueryParams } from '../delivery-order.service';
 import { DoProcessingService } from '../do-processing/do-processing.service';
 import { DeliveryOrder } from '../delivery-order.model';
 import { DoProcessing, DoProcessingStatus } from '../do-processing/do-processing.model';
 import { ToastService } from '../../../../core/services/toast.service';
 import { ConfirmService } from '../../../../core/services/confirm.service';
+import { Subject, debounceTime, distinctUntilChanged, forkJoin } from 'rxjs';
 
 @Component({
   selector: 'app-do-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, TableModule, Button, Tooltip, Tag],
+  imports: [
+    CommonModule,
+    FormsModule,
+    TableModule,
+    Button,
+    Tooltip,
+    Tag,
+    InputTextModule,
+    DatePicker,
+    Select,
+  ],
   templateUrl: './do-list.component.html',
   styleUrls: ['./do-list.component.scss'],
 })
 export class DoListComponent implements OnInit {
   deliveryOrders: DeliveryOrder[] = [];
-  filteredDOs: DeliveryOrder[] = [];
   processingRecords: DoProcessing[] = [];
+  processingRecordsMap: Map<string, DoProcessing> = new Map();
   loading = false;
+
+  // Pagination
+  totalRecords = 0;
+  rows = 10;
+  first = 0;
+  rowsPerPageOptions = [10, 25, 50, 100];
+
+  // Filters
   searchTerm = '';
+  dateRange: Date[] | null = null;
+  selectedStatus: string | null = null;
+
+  // Search debounce
+  private searchSubject = new Subject<string>();
+
+  // Status options for filter
+  statusOptions = [
+    { label: 'All Statuses', value: null },
+    { label: 'Not Started', value: 'not_started' },
+    { label: 'In Progress', value: 'in_progress' },
+    { label: 'Completed', value: 'completed' },
+    { label: 'Cancelled', value: 'cancelled' },
+  ];
+
+  // Current query params
+  private currentParams: DeliveryOrderQueryParams = {
+    page: 1,
+    limit: 10,
+    sortField: 'doDate',
+    sortOrder: 'desc',
+  };
 
   constructor(
     private doService: DeliveryOrderService,
@@ -36,12 +80,16 @@ export class DoListComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.loadDeliveryOrders();
+    // Load processing records first, then load delivery orders
     this.loadProcessingRecords();
-  }
 
-  get totalCount(): number {
-    return this.deliveryOrders.length;
+    // Setup search debounce
+    this.searchSubject.pipe(debounceTime(400), distinctUntilChanged()).subscribe((searchTerm) => {
+      this.currentParams.search = searchTerm || undefined;
+      this.currentParams.page = 1;
+      this.first = 0;
+      this.loadDeliveryOrders();
+    });
   }
 
   get totalAmount(): number {
@@ -53,34 +101,84 @@ export class DoListComponent implements OnInit {
   }
 
   onSearch(): void {
-    this.applyFilters();
+    this.searchSubject.next(this.searchTerm);
   }
 
-  applyFilters(): void {
-    let result = [...this.deliveryOrders];
-
-    if (this.searchTerm) {
-      const term = this.searchTerm.toLowerCase();
-      result = result.filter(
-        (d) =>
-          d.doNumber?.toLowerCase().includes(term) ||
-          d.vendor?.companyName?.toLowerCase().includes(term) ||
-          (d as any).vendorName?.toLowerCase().includes(term) ||
-          d.vehicleNo?.toLowerCase().includes(term)
-      );
+  onDateRangeChange(): void {
+    if (this.dateRange && this.dateRange.length === 2 && this.dateRange[0] && this.dateRange[1]) {
+      this.currentParams.startDate = this.formatDate(this.dateRange[0]);
+      this.currentParams.endDate = this.formatDate(this.dateRange[1]);
+    } else {
+      this.currentParams.startDate = undefined;
+      this.currentParams.endDate = undefined;
     }
+    this.currentParams.page = 1;
+    this.first = 0;
+    this.loadDeliveryOrders();
+  }
 
-    this.filteredDOs = result;
+  onStatusChange(): void {
+    // Status filter is applied client-side after fetching data
+    // because processing status comes from our internal do_processing table
+    this.currentParams.page = 1;
+    this.first = 0;
+    this.loadDeliveryOrders();
+  }
+
+  clearFilters(): void {
+    this.searchTerm = '';
+    this.dateRange = null;
+    this.selectedStatus = null;
+    this.currentParams = {
+      page: 1,
+      limit: this.rows,
+      sortField: 'doDate',
+      sortOrder: 'desc',
+    };
+    this.first = 0;
+    this.loadDeliveryOrders();
+  }
+
+  private formatDate(date: Date): string {
+    return date.toISOString().split('T')[0];
   }
 
   loadDeliveryOrders(): void {
     this.loading = true;
-    // Use data source endpoint which fetches from external DB if enabled
-    this.doService.getAllFromDataSource().subscribe({
+
+    // If status filter is applied, we need to fetch more records and filter client-side
+    // because processing status is in our internal DB, not the external DO source
+    const params = { ...this.currentParams };
+
+    if (this.selectedStatus) {
+      // Fetch more records when filtering by status (we'll filter client-side)
+      params.limit = 500; // Fetch more to filter
+      params.page = 1;
+    }
+
+    this.doService.getAllFromDataSourcePaginated(params).subscribe({
       next: (res) => {
-        if (res.success && res.data) {
-          this.deliveryOrders = res.data;
-          this.filteredDOs = [...this.deliveryOrders];
+        if (res.success) {
+          let orders = res.data || [];
+          let total = res.pagination?.total || 0;
+
+          // Apply status filter client-side
+          if (this.selectedStatus) {
+            orders = orders.filter((order) => {
+              const status = this.getProcessingStatus(order);
+              return status === this.selectedStatus;
+            });
+            total = orders.length;
+
+            // Apply client-side pagination for status-filtered results
+            const page = this.currentParams.page || 1;
+            const limit = this.currentParams.limit || 10;
+            const start = (page - 1) * limit;
+            orders = orders.slice(start, start + limit);
+          }
+
+          this.deliveryOrders = orders;
+          this.totalRecords = total;
         }
         this.loading = false;
       },
@@ -91,15 +189,45 @@ export class DoListComponent implements OnInit {
     });
   }
 
+  onLazyLoad(event: TableLazyLoadEvent): void {
+    this.first = event.first || 0;
+    this.rows = event.rows || 10;
+
+    // Calculate page number (1-based)
+    this.currentParams.page = Math.floor(this.first / this.rows) + 1;
+    this.currentParams.limit = this.rows;
+
+    // Handle sorting
+    if (event.sortField) {
+      this.currentParams.sortField = event.sortField as string;
+      this.currentParams.sortOrder = event.sortOrder === 1 ? 'asc' : 'desc';
+    }
+
+    this.loadDeliveryOrders();
+  }
+
   loadProcessingRecords(): void {
     this.doProcessingService.getAll().subscribe({
       next: (res) => {
         if (res.success && res.data) {
           this.processingRecords = res.data;
+          // Build a map for quick lookup
+          this.processingRecordsMap.clear();
+          for (const p of this.processingRecords) {
+            if (p.doNumber) {
+              this.processingRecordsMap.set(p.doNumber, p);
+            }
+            if (p.externalDoId) {
+              this.processingRecordsMap.set(p.externalDoId, p);
+            }
+          }
+          // Now load delivery orders
+          this.loadDeliveryOrders();
         }
       },
       error: () => {
-        // Silently fail - processing records are optional for display
+        // Still load delivery orders even if processing records fail
+        this.loadDeliveryOrders();
       },
     });
   }
@@ -117,20 +245,10 @@ export class DoListComponent implements OnInit {
   }
 
   startProcessing(dOrder: DeliveryOrder): void {
-    // Debug: Check what ID we're getting
-    console.log('Starting processing for DO:', dOrder);
-    console.log('DO ID:', dOrder.id);
-    console.log('DO Number:', dOrder.doNumber);
-
-    // Create processing record directly and navigate to detail screen
     this.createProcessingRecord(dOrder);
   }
 
   createProcessingRecord(dOrder: DeliveryOrder): void {
-    console.log('Creating processing record for DO:', dOrder);
-    console.log('DO ID:', dOrder.id);
-    console.log('DO Number:', dOrder.doNumber);
-
     const request = {
       externalDoId: dOrder.id?.toString(),
       doNumber: dOrder.doNumber,
@@ -151,22 +269,15 @@ export class DoListComponent implements OnInit {
       })),
     };
 
-    console.log('Processing request:', request);
-
     this.doProcessingService.startProcessing(request).subscribe({
       next: (res) => {
-        console.log('Processing started successfully:', res);
         if (res.success && res.data) {
           this.toastService.showSuccess('Success', 'Processing started successfully');
-          // Navigate directly to the processing detail screen (Step 1: Gate Entry)
-          console.log('Navigating to processing detail:', res.data.id);
           this.router.navigate(['/delivery-orders/processing', res.data.id]);
-          // Refresh the processing records to update the status
           this.loadProcessingRecords();
         }
       },
       error: (err) => {
-        console.error('Error starting processing:', err);
         const msg = err.error?.message || 'Failed to start processing';
         this.toastService.showError('Error', msg);
       },
@@ -176,7 +287,6 @@ export class DoListComponent implements OnInit {
   continueProcessing(dOrder: DeliveryOrder): void {
     const processing = this.getProcessingRecord(dOrder);
     if (processing) {
-      // Navigate to the processing detail page to continue
       this.router.navigate(['/delivery-orders/processing', processing.id]);
     }
   }
@@ -184,15 +294,15 @@ export class DoListComponent implements OnInit {
   viewProcessing(dOrder: DeliveryOrder): void {
     const processing = this.getProcessingRecord(dOrder);
     if (processing) {
-      // Navigate to the processing detail page to view
       this.router.navigate(['/delivery-orders/processing', processing.id]);
     }
   }
 
-  // Helper methods to check processing status
   getProcessingRecord(dOrder: DeliveryOrder): DoProcessing | undefined {
-    return this.processingRecords.find(
-      (p) => p.doNumber === dOrder.doNumber || p.externalDoId === dOrder.id?.toString()
+    // Use the map for faster lookup
+    return (
+      this.processingRecordsMap.get(dOrder.doNumber) ||
+      this.processingRecordsMap.get(dOrder.id?.toString() || '')
     );
   }
 
@@ -266,7 +376,7 @@ export class DoListComponent implements OnInit {
         this.viewProcessing(dOrder);
         break;
       case 'cancelled':
-        this.startProcessing(dOrder); // Restart processing
+        this.startProcessing(dOrder);
         break;
       default:
         this.startProcessing(dOrder);
